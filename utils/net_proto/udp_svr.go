@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/GWBC/go-utils/src/pool"
+	"github.com/GWBC/go-utils/utils/pool"
 	"gvisor.dev/gvisor/pkg/sync"
 )
 

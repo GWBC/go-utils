@@ -3,8 +3,8 @@ package nettun
 import (
 	"time"
 
-	"github.com/GWBC/go-utils/src/net_tun/netset"
-	"github.com/GWBC/go-utils/src/pool"
+	"github.com/GWBC/go-utils/utils/net_tun/netset"
+	"github.com/GWBC/go-utils/utils/pool"
 )
 
 var MTU_SIZE = 8 * 1024

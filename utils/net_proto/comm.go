@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/GWBC/go-utils/src/pool"
+	"github.com/GWBC/go-utils/utils/pool"
 )
 
 /////////////////////////////////////////////////
