@@ -1,43 +1,37 @@
 package netset
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net"
 )
 
-type RouteInfo struct {
-	Netaddr    net.IPNet //网络地址
-	TargetAddr net.IP    //目标地址，为nil，则表示链路地址
-	Metric     uint32
+type IPNet struct {
+	net.IPNet
 }
 
-func (r RouteInfo) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]any{
-		"Netaddr":    r.Netaddr.String(),
-		"TargetAddr": r.TargetAddr.String(),
-		"Metric":     r.Metric,
-	})
+func (n IPNet) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", n.String())), nil
 }
 
-func (r *RouteInfo) UnmarshalJSON(b []byte) error {
-	datas := map[string]any{}
-	if err := json.Unmarshal(b, &datas); err != nil {
-		return err
+func (n *IPNet) UnmarshalJSON(b []byte) error {
+	if len(b) <= 2 {
+		return errors.New("json data is error")
 	}
 
-	netAddr := datas["Netaddr"]
-	_, n, err := net.ParseCIDR(netAddr.(string))
+	data := b[1 : len(b)-1]
+	_, ret, err := net.ParseCIDR(string(data))
 	if err != nil {
 		return err
 	}
 
-	r.TargetAddr = net.ParseIP(datas["TargetAddr"].(string))
-	r.Netaddr = *n
-
-	metric := datas["Metric"]
-	if metric != nil {
-		r.Metric = uint32(metric.(float64))
-	}
+	n.IPNet = *ret
 
 	return nil
+}
+
+type RouteInfo struct {
+	Netaddr    IPNet  //网络地址
+	TargetAddr net.IP //目标地址，为nil，则表示链路地址
+	Metric     uint32
 }
