@@ -6,8 +6,8 @@ import (
 )
 
 type RouteInfo struct {
-	Netaddr    net.IPNet
-	TargetAddr net.IP //为nil，则表示链路地址
+	Netaddr    net.IPNet //网络地址
+	TargetAddr net.IP    //目标地址，为nil，则表示链路地址
 	Metric     uint32
 }
 
@@ -19,7 +19,7 @@ func (r RouteInfo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (ip *RouteInfo) UnmarshalJSON(b []byte) error {
+func (r *RouteInfo) UnmarshalJSON(b []byte) error {
 	datas := map[string]any{}
 	if err := json.Unmarshal(b, &datas); err != nil {
 		return err
@@ -31,12 +31,12 @@ func (ip *RouteInfo) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	ip.TargetAddr = net.ParseIP(datas["TargetAddr"].(string))
-	ip.Netaddr = *n
+	r.TargetAddr = net.ParseIP(datas["TargetAddr"].(string))
+	r.Netaddr = *n
 
 	metric := datas["Metric"]
 	if metric != nil {
-		ip.Metric = uint32(metric.(float64))
+		r.Metric = uint32(metric.(float64))
 	}
 
 	return nil
