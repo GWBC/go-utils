@@ -11,18 +11,22 @@ type IPNet struct {
 }
 
 func (n IPNet) MarshalJSON() ([]byte, error) {
+	if n.IPNet.IP == nil {
+		return []byte("\"\""), nil
+	}
+
 	return []byte(fmt.Sprintf("\"%s\"", n.String())), nil
 }
 
 func (n *IPNet) UnmarshalJSON(b []byte) error {
-	if len(b) <= 2 {
+	if len(b) < 2 {
 		return errors.New("json data is error")
 	}
 
 	data := b[1 : len(b)-1]
 	_, ret, err := net.ParseCIDR(string(data))
 	if err != nil {
-		return err
+		return nil
 	}
 
 	n.IPNet = *ret
