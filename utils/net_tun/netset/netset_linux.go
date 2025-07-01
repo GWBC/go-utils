@@ -38,7 +38,7 @@ func (n *Netset) SetIPAddresses(addr net.IPNet) error {
 
 func (n *Netset) AddRoute(route *RouteInfo) error {
 	r := &netlink.Route{
-		Dst:       &route.Netaddr,
+		Dst:       &route.Netaddr.IPNet,
 		Priority:  int(route.Metric),
 		Scope:     netlink.SCOPE_LINK,
 		LinkIndex: n.link.Attrs().Index,
@@ -57,7 +57,7 @@ func (n *Netset) AddRoute(route *RouteInfo) error {
 
 func (n *Netset) DelRoute(route *RouteInfo) error {
 	r := &netlink.Route{
-		Dst:       &route.Netaddr,
+		Dst:       &route.Netaddr.IPNet,
 		Priority:  int(route.Metric),
 		Scope:     netlink.SCOPE_LINK,
 		LinkIndex: n.link.Attrs().Index,
