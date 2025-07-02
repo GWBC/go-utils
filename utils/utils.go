@@ -43,11 +43,27 @@ func CopyBytes(data []byte) []byte {
 	return ret
 }
 
+func CopyIPNet(netAddr net.IPNet) net.IPNet {
+	_, n, _ := net.ParseCIDR(netAddr.String())
+	return *n
+}
+
 func CopyIP(ip net.IP) net.IP {
 	copyIP := make([]byte, len(ip))
 	copy(copyIP, ip)
 
 	return copyIP
+}
+
+func NetaddrToRange(netAddr net.IPNet) (net.IP, net.IP) {
+	startIP := netAddr.IP
+	endIP := CopyIP(startIP)
+
+	for i := range endIP {
+		endIP[i] |= ^netAddr.Mask[i]
+	}
+
+	return startIP, endIP
 }
 
 func FilterSlice[T any](slice []T, filterFun func(T) bool) []T {
