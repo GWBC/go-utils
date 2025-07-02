@@ -5,6 +5,7 @@ go 1.23.6
 require (
 	github.com/docker/docker v28.3.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/lysShub/divert-go v0.0.0-20250418062248-28e4462def61
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pquerna/otp v1.5.0
 	github.com/shirou/gopsutil v2.21.11+incompatible
@@ -12,9 +13,10 @@ require (
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/vishvananda/netlink v1.3.1
 	github.com/xtaci/kcp-go/v5 v5.6.22
+	golang.org/x/sys v0.33.0
 	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gvisor.dev/gvisor v0.0.0-20250626234117-81a6e524f55d
+	gvisor.dev/gvisor v0.0.0-20250627224607-2a4faf4ade0b
 )
 
 require (
@@ -30,6 +32,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/btree v1.1.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/klauspost/reedsolomon v1.12.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -56,7 +59,8 @@ require (
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
+	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 )

@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "go build -trimpath -ldflags=\"-s -w\" -o ${workspaceFolder}/bin/test",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "GOOS": "linux",
+          "GOARCH": "amd64"
+        }
+      }
+    }
+  ]
+}
