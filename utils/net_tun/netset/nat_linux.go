@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
-func StartForward() {
-	os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0644)
+func SetWriteVNetFun(writeVnet func([]byte)) {
+}
+
+func StartForward() error {
+	return os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0644)
 }
 
 func StopForward() {
-
 }
 
 func DelNatMasquerade(netAddr net.IPNet) {
