@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-func SetWriteVNetFun(writeVnet func([]byte)) {
-}
-
 func StartForward() error {
 	return os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0644)
 }

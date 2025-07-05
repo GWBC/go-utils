@@ -77,6 +77,10 @@ func StartForward() error {
 }
 
 func StopForward() {
+	if ctx == nil {
+		return
+	}
+
 	select {
 	case <-ctx.Done():
 		return
