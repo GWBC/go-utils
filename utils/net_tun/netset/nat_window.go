@@ -86,11 +86,13 @@ func StopForward() {
 		return
 	default:
 		cancel()
+		wg.Wait()
 		close(restart)
 	}
 }
 
 func DelNatMasquerade(netAddr net.IPNet) {
+	netAddr.IP = netAddr.IP.Mask(netAddr.Mask)
 	select {
 	case <-ctx.Done():
 		return
@@ -108,6 +110,7 @@ func DelNatMasquerade(netAddr net.IPNet) {
 }
 
 func AddNatMasquerade(netAddr net.IPNet) error {
+	netAddr.IP = netAddr.IP.Mask(netAddr.Mask)
 	select {
 	case <-ctx.Done():
 		return errors.New("nats is stop")
@@ -215,7 +218,7 @@ func forward() {
 			}
 		}
 
-		err = forward.Start("!loopback", divert.Network, procNetwork)
+		err = network.Start("!loopback", divert.Network, procNetwork)
 		if err != nil {
 			return err
 		}

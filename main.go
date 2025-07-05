@@ -8,11 +8,13 @@ import (
 )
 
 func main() {
-	_, netAddr, _ := net.ParseCIDR("10.0.0.0/24")
+	netaddr := net.IPNet{}
+	netaddr.IP = net.ParseIP("10.0.0.23")
+	netaddr.Mask = net.IPv4Mask(255, 255, 255, 0)
 	netset.StartForward()
-	netset.DelNatMasquerade(*netAddr)
-	netset.AddNatMasquerade(*netAddr)
+	netset.DelNatMasquerade(netaddr)
+	netset.AddNatMasquerade(netaddr)
 
-	time.Sleep(10000 * time.Second)
+	time.Sleep(2 * time.Second)
 	netset.StopForward()
 }

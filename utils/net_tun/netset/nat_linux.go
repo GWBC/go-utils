@@ -8,17 +8,28 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
+
+var natsLock sync.RWMutex
+var nats []net.IPNet
+
+func SetWriteVNetFun(writeVnet func([]byte)) {
+}
 
 func StartForward() error {
 	return os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0644)
 }
 
 func StopForward() {
+	for _, nat := range nats {
+		DelNatMasquerade(nat)
+	}
 }
 
 func DelNatMasquerade(netAddr net.IPNet) {
+	netAddr.IP = netAddr.IP.Mask(netAddr.Mask)
 	output, err := execCmd("nft", "--handle", "list", "chain", "nat", "POSTROUTING")
 	if err == nil {
 		handles := []string{}
@@ -52,9 +63,18 @@ func DelNatMasquerade(netAddr net.IPNet) {
 			break
 		}
 	}
+
+	natsLock.Lock()
+	defer natsLock.Unlock()
+	for i, nat := range nats {
+		if netAddr.String() == nat.String() {
+			copy(nats[i:], nats[i+1:])
+		}
+	}
 }
 
 func AddNatMasquerade(netAddr net.IPNet) error {
+	netAddr.IP = netAddr.IP.Mask(netAddr.Mask)
 	_, err := execCmd("nft", "add", "rule", "ip", "nat", "POSTROUTING",
 		"ip", "saddr", netAddr.String(), "counter", "masquerade")
 
