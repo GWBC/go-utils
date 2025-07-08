@@ -37,11 +37,11 @@ func (a *AesGCM) Encrypt(data string) (string, error) {
 	}
 
 	cipherData := a.gcm.Seal(nonce, nonce, []byte(data), nonce)
-	return base64.StdEncoding.EncodeToString(cipherData), nil
+	return base64.URLEncoding.EncodeToString(cipherData), nil
 }
 
 func (a *AesGCM) Decrypt(data string) (string, error) {
-	cipherData, err := base64.StdEncoding.DecodeString(data)
+	cipherData, err := base64.URLEncoding.DecodeString(data)
 	if err != nil {
 		return "", err
 	}
