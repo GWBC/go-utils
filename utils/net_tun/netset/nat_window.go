@@ -20,7 +20,8 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
-const NAT_CACHE_TIMEOUT = 5 * time.Minute
+const NAT_CACHE_TIMEOUT = 1 * time.Minute
+const NAT_CACHE_UP_TIMET = NAT_CACHE_TIMEOUT / 10
 
 var wg sync.WaitGroup
 var natsLock sync.RWMutex
@@ -172,7 +173,7 @@ func forward() {
 
 			key := genSNatKey(&iphdr)
 			oldAddr, expire := natMap.GetWithExpiration(key)
-			if oldAddr == nil || NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= 1*time.Minute {
+			if oldAddr == nil || NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= NAT_CACHE_UP_TIMET {
 				natMap.Set(key, &saddr)
 			}
 
@@ -203,7 +204,7 @@ func forward() {
 				return
 			}
 
-			if NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= 1*time.Minute {
+			if NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= NAT_CACHE_UP_TIMET {
 				natMap.Set(key, oldAddr)
 			}
 
@@ -256,41 +257,36 @@ func forward() {
 }
 
 func genSNatKey(iphdr *header.IPv4) string {
-	var sPort uint16 = 0
-	var dPort uint16 = 0
-
-	if iphdr.Protocol() == uint8(header.TCPProtocolNumber) {
-		tcp := header.TCP(iphdr.Payload())
-		sPort = tcp.SourcePort()
-		dPort = tcp.DestinationPort()
-	} else if iphdr.Protocol() == uint8(header.UDPProtocolNumber) {
-		udp := header.UDP(iphdr.Payload())
-		sPort = udp.SourcePort()
-		dPort = udp.DestinationPort()
-	}
-
-	return calcKey(iphdr.SourceAddressSlice(), iphdr.DestinationAddressSlice(), sPort, dPort)
+	sPort, dPort := getPort(iphdr)
+	return calcKey(iphdr.Protocol(), iphdr.SourceAddressSlice(), iphdr.DestinationAddressSlice(), sPort, dPort)
 }
 
 func genDNatKey(iphdr *header.IPv4) string {
-	var sPort uint16 = 0
-	var dPort uint16 = 0
+	sPort, dPort := getPort(iphdr)
+	return calcKey(iphdr.Protocol(), iphdr.DestinationAddressSlice(), iphdr.SourceAddressSlice(), dPort, sPort)
+}
 
-	if iphdr.Protocol() == uint8(header.TCPProtocolNumber) {
+func getPort(iphdr *header.IPv4) (sPort uint16, dPort uint16) {
+	switch iphdr.Protocol() {
+	case uint8(header.TCPProtocolNumber):
 		tcp := header.TCP(iphdr.Payload())
 		sPort = tcp.SourcePort()
 		dPort = tcp.DestinationPort()
-	} else if iphdr.Protocol() == uint8(header.UDPProtocolNumber) {
+	case uint8(header.UDPProtocolNumber):
 		udp := header.UDP(iphdr.Payload())
 		sPort = udp.SourcePort()
 		dPort = udp.DestinationPort()
+	case uint8(header.ICMPv4ProtocolNumber):
+		icmp := header.ICMPv4(iphdr.Payload())
+		sPort = icmp.Ident() //icmp没有端口，使用ID作为唯一标识
+		dPort = icmp.Ident()
 	}
 
-	return calcKey(iphdr.DestinationAddressSlice(), iphdr.SourceAddressSlice(), dPort, sPort)
+	return sPort, dPort
 }
 
-func calcKey(src []byte, dst []byte, sPort uint16, dPort uint16) string {
-	key := make([]byte, 12)
+func calcKey(protocol uint8, src []byte, dst []byte, sPort uint16, dPort uint16) string {
+	key := make([]byte, 16)
 	index := 0
 	copy(key[index:], src)
 	index += 4
@@ -304,6 +300,9 @@ func calcKey(src []byte, dst []byte, sPort uint16, dPort uint16) string {
 	binary.BigEndian.PutUint16(key[index:], dPort)
 	index += 2
 
+	key[index] = protocol
+	index += 1
+
 	return string(key)
 }
 
@@ -313,7 +312,8 @@ func calcChecksum(iphdr *header.IPv4, pkg []byte) {
 	iphdr.SetChecksum(0)
 	iphdr.SetChecksum(^checksum.Checksum(pkg[:iphdr.HeaderLength()], 0))
 
-	if iphdr.Protocol() == uint8(header.TCPProtocolNumber) {
+	switch iphdr.Protocol() {
+	case uint8(header.TCPProtocolNumber):
 		tcp := header.TCP(ipPayload)
 		tcp.SetChecksum(0)
 		tcp.SetChecksum(^checksum.Combine(header.PseudoHeaderChecksum(
@@ -321,7 +321,7 @@ func calcChecksum(iphdr *header.IPv4, pkg []byte) {
 			iphdr.SourceAddress(), iphdr.DestinationAddress(),
 			uint16(len(ipPayload)),
 		), checksum.Checksum(ipPayload, 0)))
-	} else if iphdr.Protocol() == uint8(header.UDPProtocolNumber) {
+	case uint8(header.UDPProtocolNumber):
 		udp := header.UDP(ipPayload)
 		udp.SetChecksum(0)
 		udp.SetChecksum(^checksum.Combine(header.PseudoHeaderChecksum(
@@ -329,6 +329,10 @@ func calcChecksum(iphdr *header.IPv4, pkg []byte) {
 			iphdr.SourceAddress(), iphdr.DestinationAddress(),
 			uint16(len(ipPayload)),
 		), checksum.Checksum(ipPayload, 0)))
+	case uint8(header.ICMPv4ProtocolNumber):
+		icmp := header.ICMPv4(ipPayload)
+		icmp.SetChecksum(0)
+		icmp.SetChecksum(^checksum.Checksum(icmp, 0))
 	}
 }
 

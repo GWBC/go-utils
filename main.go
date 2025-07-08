@@ -15,6 +15,6 @@ func main() {
 	netset.DelNatMasquerade(netaddr)
 	netset.AddNatMasquerade(netaddr)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1000 * time.Second)
 	netset.StopForward()
 }
