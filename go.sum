@@ -290,5 +290,7 @@ gvisor.dev/gvisor v0.0.0-20250708025816-4a238a4a1092 h1:jMkO/eFCfRXYqIWj9co5StJ2
 gvisor.dev/gvisor v0.0.0-20250708025816-4a238a4a1092/go.mod h1:i8iCZyAdwRnLZYaIi2NUL1gfNtAveqxkKAe0JfAv9Bs=
 gvisor.dev/gvisor v0.0.0-20250708030508-af8a1a4e46f2 h1:Sysy8dES0DZJWjWzAnRNvdmkP/+B0okClKcfjwIJ2bM=
 gvisor.dev/gvisor v0.0.0-20250708030508-af8a1a4e46f2/go.mod h1:i8iCZyAdwRnLZYaIi2NUL1gfNtAveqxkKAe0JfAv9Bs=
+gvisor.dev/gvisor v0.0.0-20250708203410-229e3337f954 h1:6C+YMsF4tcLfQFH1lsUEbhbLdFZyaEwTPO59PvDYZY8=
+gvisor.dev/gvisor v0.0.0-20250708203410-229e3337f954/go.mod h1:i8iCZyAdwRnLZYaIi2NUL1gfNtAveqxkKAe0JfAv9Bs=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=

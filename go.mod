@@ -16,7 +16,7 @@ require (
 	golang.org/x/sys v0.33.0
 	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gvisor.dev/gvisor v0.0.0-20250708030508-af8a1a4e46f2
+	gvisor.dev/gvisor v0.0.0-20250708203410-229e3337f954
 )
 
 require (
