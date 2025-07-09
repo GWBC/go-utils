@@ -59,6 +59,10 @@ func (t *TCPClient) Start() error {
 }
 
 func (t *TCPClient) Stop() {
+	if t.ctx == nil {
+		return
+	}
+
 	t.Close()
 	t.Wait()
 }

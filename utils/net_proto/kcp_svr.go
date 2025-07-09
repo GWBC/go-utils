@@ -59,6 +59,10 @@ func (k *KCPSvr) Stop() {
 }
 
 func (k *KCPSvr) stop() {
+	if k.ctx == nil {
+		return
+	}
+
 	select {
 	case <-k.ctx.Done():
 		return

@@ -52,6 +52,10 @@ func (t *TCPSvr) Start() error {
 }
 
 func (t *TCPSvr) Stop() {
+	if t.ctx == nil {
+		return
+	}
+
 	t.stop()
 	t.Wait()
 }

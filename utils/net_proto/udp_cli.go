@@ -62,6 +62,10 @@ func (u *UDPClient) Start() error {
 }
 
 func (u *UDPClient) Stop() {
+	if u.ctx == nil {
+		return
+	}
+
 	u.Close()
 	u.Wait()
 }

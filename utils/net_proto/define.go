@@ -45,12 +45,20 @@ type Connection interface {
 // 网络环境
 type NetworkContext interface {
 	NewContext() NetworkContext
+
+	SetType(netType string)
+	GetType() string
+
 	SetAddr(addr string) NetworkContext
+	GetAddr() string
+
 	NewHeartCheck(fun NewHeartFun) NetworkContext
 	AddDecode(decode StreamDecode) NetworkContext
+
 	GetBlock() *pool.Block
 	SetBlock(size int, payloadOffset int) NetworkContext
 	SetRWInfo(readPayload bool, writePayload bool) NetworkContext
+
 	Wait()
 }
 

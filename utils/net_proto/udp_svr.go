@@ -103,6 +103,10 @@ func (u *UDPSvr) Start() error {
 }
 
 func (u *UDPSvr) Stop() {
+	if u.ctx == nil {
+		return
+	}
+
 	u.close()
 	u.Wait()
 }

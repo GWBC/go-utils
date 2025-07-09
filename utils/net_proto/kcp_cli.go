@@ -60,6 +60,10 @@ func (k *KCPClient) Start() error {
 }
 
 func (k *KCPClient) Stop() {
+	if k.ctx == nil {
+		return
+	}
+
 	k.Close()
 	k.Wait()
 }

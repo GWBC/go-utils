@@ -74,7 +74,8 @@ type SystemContext struct {
 	wPayload bool
 	dataPool *pool.BlockPool
 
-	addr string
+	addr    string
+	netType string
 
 	decodes []StreamDecode
 
@@ -86,9 +87,21 @@ func (s *SystemContext) NewContext() NetworkContext {
 	return s
 }
 
+func (s *SystemContext) SetType(netType string) {
+	s.netType = netType
+}
+
+func (s *SystemContext) GetType() string {
+	return s.netType
+}
+
 func (s *SystemContext) SetAddr(addr string) NetworkContext {
 	s.addr = addr
 	return s
+}
+
+func (s *SystemContext) GetAddr() string {
+	return s.addr
 }
 
 func (s *SystemContext) AddDecode(decode StreamDecode) NetworkContext {
