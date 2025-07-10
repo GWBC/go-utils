@@ -20,8 +20,10 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
-const NAT_CACHE_TIMEOUT = 1 * time.Minute
-const NAT_CACHE_UP_TIMET = NAT_CACHE_TIMEOUT / 10
+const (
+	NAT_CACHE_TIMEOUT  = 1 * time.Minute
+	NAT_CACHE_UP_TIMET = NAT_CACHE_TIMEOUT / 10
+)
 
 var wg sync.WaitGroup
 var natsLock sync.RWMutex
@@ -173,7 +175,8 @@ func forward() {
 
 			key := genSNatKey(&iphdr)
 			oldAddr, expire := natMap.GetWithExpiration(key)
-			if oldAddr == nil || NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= NAT_CACHE_UP_TIMET {
+			diff := NAT_CACHE_TIMEOUT - time.Since(expire).Abs()
+			if oldAddr == nil || diff >= NAT_CACHE_UP_TIMET || diff < 0 {
 				natMap.Set(key, &saddr)
 			}
 
@@ -204,7 +207,8 @@ func forward() {
 				return
 			}
 
-			if NAT_CACHE_TIMEOUT-time.Since(expire).Abs() >= NAT_CACHE_UP_TIMET {
+			diff := NAT_CACHE_TIMEOUT - time.Since(expire).Abs()
+			if diff >= NAT_CACHE_UP_TIMET || diff < 0 {
 				natMap.Set(key, oldAddr)
 			}
 
