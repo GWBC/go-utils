@@ -73,6 +73,10 @@ func (k *KCPClient) Write(data *pool.Block) error {
 }
 
 func (k *KCPClient) Close() {
+	if k.ctx == nil {
+		return
+	}
+
 	select {
 	case <-k.ctx.Done():
 		return
