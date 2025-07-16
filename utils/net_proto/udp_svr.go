@@ -30,7 +30,6 @@ func (u *UDPConn) Close() {
 		return
 	default:
 		u.CancelFun()
-		close(u.ReadChan)
 		u.Svr.delete(u.Addr.String())
 	}
 }

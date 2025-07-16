@@ -181,7 +181,6 @@ type WriteStartInfo struct {
 type NetworkWrite struct {
 	ctx       context.Context
 	writeChan chan NetData
-	lock      sync.RWMutex
 }
 
 func (n *NetworkWrite) SetContext(ctx context.Context) *NetworkWrite {
@@ -195,13 +194,12 @@ func (n *NetworkWrite) SetChanSize(size int) *NetworkWrite {
 }
 
 func (n *NetworkWrite) Write(data NetData) error {
-	n.lock.RLock()
-	defer n.lock.RUnlock()
-	if n.writeChan == nil {
+	select {
+	case <-n.ctx.Done():
 		return errors.New("network write is close")
+	default:
+		n.writeChan <- data
 	}
-
-	n.writeChan <- data
 
 	return nil
 }
@@ -214,11 +212,6 @@ func (n *NetworkWrite) Start(info WriteStartInfo) {
 			if info.StopCallback != nil {
 				info.StopCallback()
 			}
-
-			n.lock.Lock()
-			close(n.writeChan)
-			n.writeChan = nil
-			n.lock.Unlock()
 
 			info.Group.Done()
 		}()
