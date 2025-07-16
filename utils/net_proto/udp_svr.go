@@ -10,6 +10,7 @@ import (
 )
 
 type UDPConn struct {
+	NetworkUserData
 	Svr      *UDPSvr
 	ReadChan chan *pool.Block
 	LAddr    *net.UDPAddr

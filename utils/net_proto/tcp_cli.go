@@ -8,6 +8,7 @@ import (
 )
 
 type TCPClient struct {
+	NetworkUserData
 	SystemContext
 	ClientCallback
 

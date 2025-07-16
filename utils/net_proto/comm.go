@@ -13,6 +13,20 @@ import (
 
 /////////////////////////////////////////////////
 
+type NetworkUserData struct {
+	data any
+}
+
+func (n *NetworkUserData) SetData(data any) {
+	n.data = data
+}
+
+func (n *NetworkUserData) GetData() any {
+	return n.data
+}
+
+/////////////////////////////////////////////////
+
 type NetworkHeartCheck struct {
 	count atomic.Uint32
 

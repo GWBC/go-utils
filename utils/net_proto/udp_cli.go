@@ -7,6 +7,7 @@ import (
 )
 
 type UDPClient struct {
+	NetworkUserData
 	SystemContext
 	ClientCallback
 

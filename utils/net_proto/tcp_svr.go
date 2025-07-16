@@ -8,6 +8,7 @@ import (
 )
 
 type TCPConn struct {
+	NetworkUserData
 	Conn     net.Conn
 	NetRead  NetworkRead
 	NetWrite NetworkWrite

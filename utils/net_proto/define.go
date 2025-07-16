@@ -35,8 +35,15 @@ type StreamDecode interface {
 	Decode(data *pool.Block) ([]*pool.Block, error)
 }
 
+// 用户数据接口
+type UserData interface {
+	SetData(data any)
+	GetData() any
+}
+
 // 连接对象
 type Connection interface {
+	UserData
 	Write(data *pool.Block) error
 	Close()
 	LocalAddr() string

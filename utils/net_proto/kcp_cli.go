@@ -8,6 +8,7 @@ import (
 )
 
 type KCPClient struct {
+	NetworkUserData
 	SystemContext
 	ClientCallback
 

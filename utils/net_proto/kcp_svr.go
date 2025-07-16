@@ -9,6 +9,7 @@ import (
 )
 
 type KCPConn struct {
+	NetworkUserData
 	Conn     net.Conn
 	NetRead  NetworkRead
 	NetWrite NetworkWrite
