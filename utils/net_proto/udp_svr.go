@@ -5,14 +5,15 @@ import (
 	"errors"
 	"net"
 
+	expiremap "github.com/GWBC/go-utils/utils/expire_map"
 	"github.com/GWBC/go-utils/utils/pool"
-	"gvisor.dev/gvisor/pkg/sync"
 )
 
 type UDPConn struct {
 	Svr      *UDPSvr
 	ReadChan chan *pool.Block
-	Addr     *net.UDPAddr
+	LAddr    *net.UDPAddr
+	RAddr    *net.UDPAddr
 	NetRead  NetworkRead
 	NetWrite NetworkWrite
 
@@ -21,7 +22,7 @@ type UDPConn struct {
 }
 
 func (u *UDPConn) Write(data *pool.Block) error {
-	return u.NetWrite.Write(NetData{u.Addr, data})
+	return u.NetWrite.Write(NetData{u.RAddr, data})
 }
 
 func (u *UDPConn) Close() {
@@ -30,12 +31,16 @@ func (u *UDPConn) Close() {
 		return
 	default:
 		u.CancelFun()
-		u.Svr.delete(u.Addr.String())
+		u.Svr.delete(u.RAddr.String())
 	}
 }
 
-func (u *UDPConn) String() string {
-	return u.Addr.String()
+func (u *UDPConn) LocalAddr() string {
+	return u.LAddr.String()
+}
+
+func (u *UDPConn) RemoteAddr() string {
+	return u.RAddr.String()
 }
 
 ////////////////////////////////////////////////////////////////
@@ -43,22 +48,19 @@ func (u *UDPConn) String() string {
 type UDPSvr struct {
 	SystemContext
 	ServerCallback
-
-	sock *net.UDPConn
-
-	lock  sync.Mutex
-	conns map[string]*UDPConn
+	sock  *net.UDPConn
+	conns expiremap.ExpireMap[*UDPConn]
 }
 
 func (u *UDPSvr) Start() error {
-	u.conns = map[string]*UDPConn{}
+	u.conns.New(-1, -1)
 
-	addr, err := net.ResolveUDPAddr("udp4", u.addr)
+	laddr, err := net.ResolveUDPAddr("udp4", u.addr)
 	if err != nil {
 		return err
 	}
 
-	sock, err := net.ListenUDP("udp4", addr)
+	sock, err := net.ListenUDP("udp4", laddr)
 	if err != nil {
 		return err
 	}
@@ -75,24 +77,21 @@ func (u *UDPSvr) Start() error {
 			block := u.dataPool.Get()
 
 			//读取网络包
-			n, addr, err := sock.ReadFromUDP(block.Pkg)
+			n, raddr, err := sock.ReadFromUDP(block.Pkg)
 			if err != nil {
 				return
 			}
 
 			block.SetPkgSize(n)
-			strAddr := addr.String()
+			remoteAddr := raddr.String()
 
-			u.lock.Lock()
-			conn := u.conns[strAddr]
-
+			conn := u.conns.Get(remoteAddr)
 			if conn == nil {
-				conn = u.newConn(addr)
-				u.conns[strAddr] = conn
+				conn = u.newConn(raddr, laddr)
+				u.conns.Set(remoteAddr, conn)
 			}
 
 			conn.ReadChan <- block
-			u.lock.Unlock()
 		}
 	}()
 
@@ -114,14 +113,14 @@ func (u *UDPSvr) Wait() {
 	u.wg.Wait()
 }
 
-func (u *UDPSvr) newConn(addr *net.UDPAddr) *UDPConn {
-	connObj := &UDPConn{Svr: u, Addr: addr}
+func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
+	connObj := &UDPConn{Svr: u, RAddr: raddr, LAddr: laddr}
 	connObj.Ctx, connObj.CancelFun = context.WithCancel(u.ctx)
 
 	connObj.ReadChan = make(chan *pool.Block, 360)
 
 	stop := func() {
-		u.delete(addr.String())
+		u.delete(raddr.String())
 	}
 
 	except := func(addr net.Addr, err error) {
@@ -141,13 +140,13 @@ func (u *UDPSvr) newConn(addr *net.UDPAddr) *UDPConn {
 				defer block.Release()
 
 				if block == nil {
-					return 0, addr, errors.New("read is close")
+					return 0, raddr, errors.New("read is close")
 				}
 
 				copy(data, block.Pkg)
-				return len(block.Pkg), addr, nil
+				return len(block.Pkg), raddr, nil
 			case <-connObj.Ctx.Done():
-				return 0, addr, errors.New("read is eof")
+				return 0, raddr, errors.New("read is eof")
 			}
 		},
 		Except:       except,
@@ -170,9 +169,7 @@ func (u *UDPSvr) newConn(addr *net.UDPAddr) *UDPConn {
 }
 
 func (u *UDPSvr) delete(addr string) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	delete(u.conns, addr)
+	u.conns.Delete(addr)
 }
 
 func (u *UDPSvr) close() {

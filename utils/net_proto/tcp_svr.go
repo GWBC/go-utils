@@ -21,7 +21,11 @@ func (t *TCPConn) Close() {
 	t.Conn.Close()
 }
 
-func (t *TCPConn) String() string {
+func (t *TCPConn) LocalAddr() string {
+	return t.Conn.LocalAddr().String()
+}
+
+func (t *TCPConn) RemoteAddr() string {
 	return t.Conn.RemoteAddr().String()
 }
 

@@ -92,6 +92,10 @@ func (u *UDPClient) Close() {
 	}
 }
 
-func (u *UDPClient) String() string {
+func (u *UDPClient) LocalAddr() string {
+	return u.sock.LocalAddr().String()
+}
+
+func (u *UDPClient) RemoteAddr() string {
 	return u.sock.RemoteAddr().String()
 }

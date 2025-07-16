@@ -85,6 +85,10 @@ func (t *TCPClient) Close() {
 	}
 }
 
-func (t *TCPClient) String() string {
+func (t *TCPClient) LocalAddr() string {
+	return t.conn.LocalAddr().String()
+}
+
+func (t *TCPClient) RemoteAddr() string {
 	return t.conn.RemoteAddr().String()
 }

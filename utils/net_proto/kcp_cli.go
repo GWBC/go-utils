@@ -90,6 +90,10 @@ func (k *KCPClient) Close() {
 	}
 }
 
-func (k *KCPClient) String() string {
+func (k *KCPClient) LocalAddr() string {
+	return k.conn.LocalAddr().String()
+}
+
+func (k *KCPClient) RemoteAddr() string {
 	return k.conn.RemoteAddr().String()
 }

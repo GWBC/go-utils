@@ -22,7 +22,11 @@ func (k *KCPConn) Close() {
 	k.Conn.Close()
 }
 
-func (k *KCPConn) String() string {
+func (k *KCPConn) LocalAddr() string {
+	return k.Conn.LocalAddr().String()
+}
+
+func (k *KCPConn) RemoteAddr() string {
 	return k.Conn.RemoteAddr().String()
 }
 

@@ -39,7 +39,8 @@ type StreamDecode interface {
 type Connection interface {
 	Write(data *pool.Block) error
 	Close()
-	String() string
+	LocalAddr() string
+	RemoteAddr() string
 }
 
 // 网络环境
