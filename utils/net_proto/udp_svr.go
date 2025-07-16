@@ -127,7 +127,19 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 		u.exceptFun(connObj, err)
 	}
 
+	connObj.NetWrite.SetChanSize(360).SetContext(u.ctx)
 	connObj.NetRead.SetContext(u.ctx)
+
+	connObj.NetWrite.Start(WriteStartInfo{
+		Group:        &u.wg,
+		WritePayload: u.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return u.sock.WriteToUDP(data, addr.(*net.UDPAddr))
+		},
+		Except:       except,
+		StopCallback: stop,
+	})
+
 	connObj.NetRead.Start(ReadStartInfo{
 		Conn:        connObj,
 		Group:       &u.wg,
@@ -152,17 +164,6 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 		Except:       except,
 		StopCallback: stop,
 		ReadCallback: u.readFun,
-	})
-
-	connObj.NetWrite.SetChanSize(360).SetContext(u.ctx)
-	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &u.wg,
-		WritePayload: u.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return u.sock.WriteToUDP(data, addr.(*net.UDPAddr))
-		},
-		Except:       except,
-		StopCallback: stop,
 	})
 
 	return connObj

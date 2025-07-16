@@ -29,7 +29,19 @@ func (k *KCPClient) Start() error {
 		k.exceptFun(k, err)
 	}
 
+	k.netWrite.SetChanSize(360).SetContext(k.ctx)
 	k.netRead.SetContext(k.ctx).SetDecode(k.decodes)
+
+	k.netWrite.Start(WriteStartInfo{
+		Group:        &k.wg,
+		WritePayload: k.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return conn.Write(data)
+		},
+		Except:       except,
+		StopCallback: k.Close,
+	})
+
 	k.netRead.Start(ReadStartInfo{
 		Conn:        k,
 		Group:       &k.wg,
@@ -43,17 +55,6 @@ func (k *KCPClient) Start() error {
 		Except:       except,
 		StopCallback: k.Close,
 		ReadCallback: k.readFun,
-	})
-
-	k.netWrite.SetChanSize(360).SetContext(k.ctx)
-	k.netWrite.Start(WriteStartInfo{
-		Group:        &k.wg,
-		WritePayload: k.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return conn.Write(data)
-		},
-		Except:       except,
-		StopCallback: k.Close,
 	})
 
 	return nil

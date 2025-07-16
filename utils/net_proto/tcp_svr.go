@@ -129,7 +129,19 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 		t.exceptFun(connObj, err)
 	}
 
+	connObj.NetWrite.SetChanSize(360).SetContext(t.ctx)
 	connObj.NetRead.SetContext(t.ctx).SetDecode(t.decodes)
+
+	connObj.NetWrite.Start(WriteStartInfo{
+		Group:        &t.wg,
+		WritePayload: t.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return conn.Write(data)
+		},
+		Except:       except,
+		StopCallback: stop,
+	})
+
 	connObj.NetRead.Start(ReadStartInfo{
 		Conn:        connObj,
 		Group:       &t.wg,
@@ -143,16 +155,5 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 		Except:       except,
 		StopCallback: stop,
 		ReadCallback: t.readFun,
-	})
-
-	connObj.NetWrite.SetChanSize(360).SetContext(t.ctx)
-	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &t.wg,
-		WritePayload: t.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return conn.Write(data)
-		},
-		Except:       except,
-		StopCallback: stop,
 	})
 }

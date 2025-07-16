@@ -28,7 +28,19 @@ func (t *TCPClient) Start() error {
 		t.exceptFun(t, err)
 	}
 
+	t.netWrite.SetChanSize(360).SetContext(t.ctx)
 	t.netRead.SetContext(t.ctx).SetDecode(t.decodes)
+
+	t.netWrite.Start(WriteStartInfo{
+		Group:        &t.wg,
+		WritePayload: t.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return conn.Write(data)
+		},
+		Except:       except,
+		StopCallback: t.Close,
+	})
+
 	t.netRead.Start(ReadStartInfo{
 		Conn:        t,
 		Group:       &t.wg,
@@ -42,17 +54,6 @@ func (t *TCPClient) Start() error {
 		Except:       except,
 		StopCallback: t.Close,
 		ReadCallback: t.readFun,
-	})
-
-	t.netWrite.SetChanSize(360).SetContext(t.ctx)
-	t.netWrite.Start(WriteStartInfo{
-		Group:        &t.wg,
-		WritePayload: t.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return conn.Write(data)
-		},
-		Except:       except,
-		StopCallback: t.Close,
 	})
 
 	return nil

@@ -131,7 +131,19 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 		k.exceptFun(connObj, err)
 	}
 
+	connObj.NetWrite.SetChanSize(360).SetContext(k.ctx)
 	connObj.NetRead.SetContext(k.ctx).SetDecode(k.decodes)
+
+	connObj.NetWrite.Start(WriteStartInfo{
+		Group:        &k.wg,
+		WritePayload: k.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return conn.Write(data)
+		},
+		Except:       except,
+		StopCallback: stop,
+	})
+
 	connObj.NetRead.Start(ReadStartInfo{
 		Conn:        connObj,
 		Group:       &k.wg,
@@ -147,14 +159,4 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 		ReadCallback: k.readFun,
 	})
 
-	connObj.NetWrite.SetChanSize(360).SetContext(k.ctx)
-	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &k.wg,
-		WritePayload: k.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return conn.Write(data)
-		},
-		Except:       except,
-		StopCallback: stop,
-	})
 }

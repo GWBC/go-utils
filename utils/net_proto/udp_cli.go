@@ -32,7 +32,19 @@ func (u *UDPClient) Start() error {
 		u.exceptFun(u, err)
 	}
 
+	u.netWrite.SetChanSize(360).SetContext(u.ctx)
 	u.netRead.SetContext(u.ctx).SetDecode(u.decodes)
+
+	u.netWrite.Start(WriteStartInfo{
+		Group:        &u.wg,
+		WritePayload: u.wPayload,
+		Write: func(addr net.Addr, data []byte) (int, error) {
+			return u.sock.Write(data)
+		},
+		Except:       except,
+		StopCallback: u.Close,
+	})
+
 	u.netRead.Start(ReadStartInfo{
 		Conn:        u,
 		Group:       &u.wg,
@@ -45,17 +57,6 @@ func (u *UDPClient) Start() error {
 		Except:       except,
 		StopCallback: u.Close,
 		ReadCallback: u.readFun,
-	})
-
-	u.netWrite.SetChanSize(360).SetContext(u.ctx)
-	u.netWrite.Start(WriteStartInfo{
-		Group:        &u.wg,
-		WritePayload: u.wPayload,
-		Write: func(addr net.Addr, data []byte) (int, error) {
-			return u.sock.Write(data)
-		},
-		Except:       except,
-		StopCallback: u.Close,
 	})
 
 	return nil
