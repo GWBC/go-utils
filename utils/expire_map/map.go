@@ -19,25 +19,35 @@ func (e *ExpireMap[T]) Set(k string, v T) {
 }
 
 func (e *ExpireMap[T]) Get(k string) T {
+	v, _ := e.GetX(k)
+	return v
+}
+
+func (e *ExpireMap[T]) GetWithExpiration(k string) (T, time.Time) {
+	v, t, _ := e.GetXWithExpiration(k)
+	return v, t
+}
+
+func (e *ExpireMap[T]) GetX(k string) (T, bool) {
 	var ret T
 
 	v, ok := e.cache.Get(k)
 	if !ok {
-		return ret
+		return ret, ok
 	}
 
-	return v.(T)
+	return v.(T), ok
 }
 
-func (e *ExpireMap[T]) GetWithExpiration(k string) (T, time.Time) {
+func (e *ExpireMap[T]) GetXWithExpiration(k string) (T, time.Time, bool) {
 	var ret T
 
 	v, ex, ok := e.cache.GetWithExpiration(k)
 	if !ok {
-		return ret, ex
+		return ret, ex, ok
 	}
 
-	return v.(T), ex
+	return v.(T), ex, ok
 }
 
 func (e *ExpireMap[T]) Items() map[string]gocache.Item {
