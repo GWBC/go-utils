@@ -18,6 +18,8 @@ type KCPClient struct {
 }
 
 func (k *KCPClient) Start() error {
+	k.SetData(nil)
+
 	//FEC前向纠错：10包允许丢3个包，丢包率30%，带宽相应增加30%
 	conn, err := kcp.DialWithOptions(k.addr, nil, 10, 3)
 	if err != nil {

@@ -17,6 +17,8 @@ type UDPClient struct {
 }
 
 func (u *UDPClient) Start() error {
+	u.SetData(nil)
+
 	addr, err := net.ResolveUDPAddr("udp4", u.addr)
 	if err != nil {
 		return err

@@ -117,7 +117,6 @@ func (u *UDPSvr) Wait() {
 func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 	connObj := &UDPConn{Svr: u, RAddr: raddr, LAddr: laddr}
 	connObj.Ctx, connObj.CancelFun = context.WithCancel(u.ctx)
-
 	connObj.ReadChan = make(chan *pool.Block, 360)
 
 	stop := func() {
