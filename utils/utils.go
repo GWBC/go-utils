@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net"
+	"regexp"
 )
 
 func SplitSlice(slice []byte, chunkSize int) [][]byte {
@@ -76,4 +77,41 @@ func FilterSlice[T any](slice []T, filterFun func(T) bool) []T {
 	}
 
 	return slice[:j]
+}
+
+func _getIP(addr string) ([]byte, error) {
+	data, err := Get(addr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	re, err := regexp.Compile(`\d+\.\d+\.\d+\.\d+`)
+	if err != nil {
+		return nil, err
+	}
+
+	ips := re.FindAllString(string(data), -1)
+	for _, ip := range ips {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			return netIP, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func GetPublicIP(addr string, retryCount int) (net.IP, error) {
+	var retErr error
+	for i := 0; i < retryCount; i++ {
+		ip, err := _getIP(addr)
+		if err != nil {
+			retErr = err
+			continue
+		}
+
+		return ip, err
+	}
+
+	return nil, retErr
 }
