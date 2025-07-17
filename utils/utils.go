@@ -103,7 +103,7 @@ func _getIP(addr string) ([]byte, error) {
 
 func GetPublicIP(addr string, retryCount int) (net.IP, error) {
 	var retErr error
-	for i := 0; i < retryCount; i++ {
+	for range retryCount {
 		ip, err := _getIP(addr)
 		if err != nil {
 			retErr = err
