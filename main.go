@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"time"
 
+	"github.com/GWBC/go-utils/utils"
 	"github.com/GWBC/go-utils/utils/net_tun/netset"
 	//p2plog "github.com/ipfs/go-log/v2"
 	// "github.com/libp2p/go-libp2p"
@@ -138,5 +140,8 @@ func NatTest() {
 // }
 
 func main() {
-	NatTest()
+	//NatTest()
+
+	eth2, _ := utils.GetLocalIPv4("eth2")
+	fmt.Println(eth2)
 }
