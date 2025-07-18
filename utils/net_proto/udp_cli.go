@@ -50,6 +50,7 @@ func (u *UDPClient) Start() error {
 		},
 		Except:       except,
 		StopCallback: u.Close,
+		Hook:         u.wHook,
 	})
 
 	u.netRead.Start(ReadStartInfo{
@@ -64,6 +65,7 @@ func (u *UDPClient) Start() error {
 		Except:       except,
 		StopCallback: u.Close,
 		ReadCallback: u.readFun,
+		Hook:         u.rHook,
 	})
 
 	return nil

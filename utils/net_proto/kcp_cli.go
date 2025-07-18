@@ -47,6 +47,7 @@ func (k *KCPClient) Start() error {
 		},
 		Except:       except,
 		StopCallback: k.Close,
+		Hook:         k.wHook,
 	})
 
 	k.netRead.Start(ReadStartInfo{
@@ -62,6 +63,7 @@ func (k *KCPClient) Start() error {
 		Except:       except,
 		StopCallback: k.Close,
 		ReadCallback: k.readFun,
+		Hook:         k.rHook,
 	})
 
 	return nil

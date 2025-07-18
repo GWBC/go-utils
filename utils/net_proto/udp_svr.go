@@ -142,6 +142,7 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 		},
 		Except:       except,
 		StopCallback: stop,
+		Hook:         u.wHook,
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
@@ -168,6 +169,7 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 		Except:       except,
 		StopCallback: stop,
 		ReadCallback: u.readFun,
+		Hook:         u.rHook,
 	})
 
 	return connObj

@@ -91,13 +91,25 @@ type SystemContext struct {
 	addr    string
 	netType string
 
-	decodes []StreamDecode
-
+	decodes       []StreamDecode
 	newHeartCheck NewHeartFun
+
+	rHook HookFun
+	wHook HookFun
 }
 
 func (s *SystemContext) NewContext() NetworkContext {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
+	return s
+}
+
+func (s *SystemContext) HookRead(fun HookFun) NetworkContext {
+	s.rHook = fun
+	return s
+}
+
+func (s *SystemContext) HookWrite(fun HookFun) NetworkContext {
+	s.wHook = fun
 	return s
 }
 
@@ -190,6 +202,7 @@ type WriteStartInfo struct {
 	Write        func(addr net.Addr, data []byte) (int, error)
 	Except       func(addr net.Addr, err error)
 	StopCallback func()
+	Hook         HookFun
 }
 
 type NetworkWrite struct {
@@ -230,17 +243,36 @@ func (n *NetworkWrite) Start(info WriteStartInfo) {
 			info.Group.Done()
 		}()
 
-		var rawWritePkg = func(block *NetData) (int, error) {
+		rawWritePkg := func(block *NetData) (int, error) {
 			return info.Write(block.Addr, block.Data.Pkg)
 		}
 
-		var rawWritePayload = func(block *NetData) (int, error) {
+		rawWritePayload := func(block *NetData) (int, error) {
 			return info.Write(block.Addr, block.Data.Pkg[block.Data.PayloadOffset:])
 		}
 
-		rawWrite := rawWritePkg
-		if info.WritePayload {
-			rawWrite = rawWritePayload
+		rawWritePkgWithHook := func(block *NetData) (int, error) {
+			info.Hook(0, block.Data)
+			return info.Write(block.Addr, block.Data.Pkg)
+		}
+
+		rawWritePayloadWithHook := func(block *NetData) (int, error) {
+			info.Hook(block.Data.PayloadOffset, block.Data)
+			return info.Write(block.Addr, block.Data.Pkg[block.Data.PayloadOffset:])
+		}
+
+		var rawWrite func(block *NetData) (int, error)
+
+		if info.Hook == nil {
+			rawWrite = rawWritePkg
+			if info.WritePayload {
+				rawWrite = rawWritePayload
+			}
+		} else {
+			rawWrite = rawWritePkgWithHook
+			if info.WritePayload {
+				rawWrite = rawWritePayloadWithHook
+			}
 		}
 
 		write := func(block *NetData) bool {
@@ -276,6 +308,19 @@ func (n *NetworkWrite) Start(info WriteStartInfo) {
 
 /////////////////////////////////////////////////
 
+type ReadStartInfo struct {
+	Conn         Connection
+	Group        *sync.WaitGroup
+	DataPool     *pool.BlockPool
+	ReadPayload  bool
+	HeartCheck   HeartbeatCheck
+	Read         func(data []byte) (int, net.Addr, error)
+	Except       func(addr net.Addr, err error)
+	StopCallback func()
+	ReadCallback NetReadFun
+	Hook         HookFun
+}
+
 type NetworkRead struct {
 	ctx     context.Context
 	decodes []StreamDecode
@@ -294,18 +339,6 @@ func (n *NetworkRead) SetContext(ctx context.Context) *NetworkRead {
 	return n
 }
 
-type ReadStartInfo struct {
-	Conn         Connection
-	Group        *sync.WaitGroup
-	DataPool     *pool.BlockPool
-	ReadPayload  bool
-	HeartCheck   HeartbeatCheck
-	Read         func(data []byte) (int, net.Addr, error)
-	Except       func(addr net.Addr, err error)
-	StopCallback func()
-	ReadCallback NetReadFun
-}
-
 func (n *NetworkRead) Start(info ReadStartInfo) {
 	info.Group.Add(1)
 
@@ -322,11 +355,11 @@ func (n *NetworkRead) Start(info ReadStartInfo) {
 			info.Group.Done()
 		}()
 
-		var rawReadPkg = func(block *pool.Block) (int, net.Addr, error) {
+		rawReadPkg := func(block *pool.Block) (int, net.Addr, error) {
 			return info.Read(block.Pkg)
 		}
 
-		var rawReadPayload = func(block *pool.Block) (int, net.Addr, error) {
+		rawReadPayload := func(block *pool.Block) (int, net.Addr, error) {
 			n, addr, err := info.Read(block.Pkg[block.PayloadOffset:])
 			if err == nil {
 				n += block.PayloadOffset
@@ -335,10 +368,32 @@ func (n *NetworkRead) Start(info ReadStartInfo) {
 			return n, addr, err
 		}
 
-		rawRead := rawReadPkg
+		rawReadPkgWithHook := func(block *pool.Block) (int, net.Addr, error) {
+			info.Hook(0, block)
+			return info.Read(block.Pkg)
+		}
 
-		if info.ReadPayload {
-			rawRead = rawReadPayload
+		rawReadPayloadWithHook := func(block *pool.Block) (int, net.Addr, error) {
+			info.Hook(block.PayloadOffset, block)
+			n, addr, err := info.Read(block.Pkg[block.PayloadOffset:])
+			if err == nil {
+				n += block.PayloadOffset
+			}
+
+			return n, addr, err
+		}
+
+		var rawRead func(block *pool.Block) (int, net.Addr, error)
+		if info.Hook == nil {
+			rawRead = rawReadPkg
+			if info.ReadPayload {
+				rawRead = rawReadPayload
+			}
+		} else {
+			rawRead = rawReadPkgWithHook
+			if info.ReadPayload {
+				rawRead = rawReadPayloadWithHook
+			}
 		}
 
 		tmpExceptFun := func(addr net.Addr, err error) {

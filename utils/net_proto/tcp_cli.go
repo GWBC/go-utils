@@ -46,6 +46,7 @@ func (t *TCPClient) Start() error {
 		},
 		Except:       except,
 		StopCallback: t.Close,
+		Hook:         t.wHook,
 	})
 
 	t.netRead.Start(ReadStartInfo{
@@ -61,6 +62,7 @@ func (t *TCPClient) Start() error {
 		Except:       except,
 		StopCallback: t.Close,
 		ReadCallback: t.readFun,
+		Hook:         t.rHook,
 	})
 
 	return nil

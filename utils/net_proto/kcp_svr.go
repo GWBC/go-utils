@@ -147,6 +147,7 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 		},
 		Except:       except,
 		StopCallback: stop,
+		Hook:         k.wHook,
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
@@ -162,6 +163,7 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 		Except:       except,
 		StopCallback: stop,
 		ReadCallback: k.readFun,
+		Hook:         k.rHook,
 	})
 
 }

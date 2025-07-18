@@ -145,6 +145,7 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 		},
 		Except:       except,
 		StopCallback: stop,
+		Hook:         t.wHook,
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
@@ -160,5 +161,6 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 		Except:       except,
 		StopCallback: stop,
 		ReadCallback: t.readFun,
+		Hook:         t.rHook,
 	})
 }
