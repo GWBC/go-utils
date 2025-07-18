@@ -40,8 +40,7 @@ func (k *KCPClient) Start() error {
 	k.netRead.SetContext(k.ctx).SetDecode(k.decodes)
 
 	k.netWrite.Start(WriteStartInfo{
-		Group:        &k.wg,
-		WritePayload: k.wPayload,
+		Group: &k.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return conn.Write(data)
 		},
@@ -51,11 +50,10 @@ func (k *KCPClient) Start() error {
 	})
 
 	k.netRead.Start(ReadStartInfo{
-		Conn:        k,
-		Group:       &k.wg,
-		DataPool:    k.dataPool,
-		ReadPayload: k.rPayload,
-		HeartCheck:  k.newHeartCheck(k),
+		Conn:       k,
+		Group:      &k.wg,
+		DataPool:   k.dataPool,
+		HeartCheck: k.newHeartCheck(k),
 		Read: func(data []byte) (int, net.Addr, error) {
 			n, err := k.conn.Read(data)
 			return n, nil, err

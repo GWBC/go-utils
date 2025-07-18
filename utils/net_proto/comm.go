@@ -84,8 +84,6 @@ type SystemContext struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	rPayload bool
-	wPayload bool
 	dataPool *pool.BlockPool
 
 	addr    string
@@ -149,12 +147,6 @@ func (s *SystemContext) SetBlock(size int, payloadOffset int) NetworkContext {
 	return s
 }
 
-func (s *SystemContext) SetRWInfo(readPayload bool, writePayload bool) NetworkContext {
-	s.rPayload = readPayload
-	s.wPayload = writePayload
-	return s
-}
-
 func (s *SystemContext) Wait() {
 	s.wg.Wait()
 }
@@ -198,7 +190,6 @@ type NetData struct {
 
 type WriteStartInfo struct {
 	Group        *sync.WaitGroup
-	WritePayload bool
 	Write        func(addr net.Addr, data []byte) (int, error)
 	Except       func(addr net.Addr, err error)
 	StopCallback func()
@@ -243,42 +234,20 @@ func (n *NetworkWrite) Start(info WriteStartInfo) {
 			info.Group.Done()
 		}()
 
-		rawWritePkg := func(block *NetData) (int, error) {
+		dWrite := func(block *NetData) (int, error) {
 			return info.Write(block.Addr, block.Data.Pkg)
 		}
 
-		rawWritePayload := func(block *NetData) (int, error) {
-			return info.Write(block.Addr, block.Data.Pkg[block.Data.PayloadOffset:])
-		}
-
-		rawWritePkgWithHook := func(block *NetData) (int, error) {
-			info.Hook(0, block.Data)
-			return info.Write(block.Addr, block.Data.Pkg)
-		}
-
-		rawWritePayloadWithHook := func(block *NetData) (int, error) {
-			info.Hook(block.Data.PayloadOffset, block.Data)
-			return info.Write(block.Addr, block.Data.Pkg[block.Data.PayloadOffset:])
-		}
-
-		var rawWrite func(block *NetData) (int, error)
-
-		if info.Hook == nil {
-			rawWrite = rawWritePkg
-			if info.WritePayload {
-				rawWrite = rawWritePayload
-			}
-		} else {
-			rawWrite = rawWritePkgWithHook
-			if info.WritePayload {
-				rawWrite = rawWritePayloadWithHook
+		if info.Hook != nil {
+			dWrite = func(block *NetData) (int, error) {
+				info.Hook(block.Data)
+				return info.Write(block.Addr, block.Data.Pkg)
 			}
 		}
 
 		write := func(block *NetData) bool {
 			defer block.Data.Release()
-
-			_, err := rawWrite(block)
+			_, err := dWrite(block)
 			if err != nil {
 				select {
 				case <-n.ctx.Done():
@@ -312,7 +281,6 @@ type ReadStartInfo struct {
 	Conn         Connection
 	Group        *sync.WaitGroup
 	DataPool     *pool.BlockPool
-	ReadPayload  bool
 	HeartCheck   HeartbeatCheck
 	Read         func(data []byte) (int, net.Addr, error)
 	Except       func(addr net.Addr, err error)
@@ -355,47 +323,6 @@ func (n *NetworkRead) Start(info ReadStartInfo) {
 			info.Group.Done()
 		}()
 
-		rawReadPkg := func(block *pool.Block) (int, net.Addr, error) {
-			return info.Read(block.Pkg)
-		}
-
-		rawReadPayload := func(block *pool.Block) (int, net.Addr, error) {
-			n, addr, err := info.Read(block.Pkg[block.PayloadOffset:])
-			if err == nil {
-				n += block.PayloadOffset
-			}
-
-			return n, addr, err
-		}
-
-		rawReadPkgWithHook := func(block *pool.Block) (int, net.Addr, error) {
-			info.Hook(0, block)
-			return info.Read(block.Pkg)
-		}
-
-		rawReadPayloadWithHook := func(block *pool.Block) (int, net.Addr, error) {
-			info.Hook(block.PayloadOffset, block)
-			n, addr, err := info.Read(block.Pkg[block.PayloadOffset:])
-			if err == nil {
-				n += block.PayloadOffset
-			}
-
-			return n, addr, err
-		}
-
-		var rawRead func(block *pool.Block) (int, net.Addr, error)
-		if info.Hook == nil {
-			rawRead = rawReadPkg
-			if info.ReadPayload {
-				rawRead = rawReadPayload
-			}
-		} else {
-			rawRead = rawReadPkgWithHook
-			if info.ReadPayload {
-				rawRead = rawReadPayloadWithHook
-			}
-		}
-
 		tmpExceptFun := func(addr net.Addr, err error) {
 			select {
 			case <-n.ctx.Done():
@@ -405,12 +332,20 @@ func (n *NetworkRead) Start(info ReadStartInfo) {
 			}
 		}
 
+		readCallBack := info.ReadCallback
+		if info.Hook != nil {
+			readCallBack = func(conn Connection, addr net.Addr, data *pool.Block) {
+				info.Hook(data)
+				info.ReadCallback(conn, addr, data)
+			}
+		}
+
 		read := func() bool {
 			block := info.DataPool.Get()
 			defer block.Release()
 
 			//读取网络包
-			rn, addr, err := rawRead(block)
+			rn, addr, err := info.Read(block.Pkg)
 			if err != nil {
 				tmpExceptFun(addr, err)
 				return false
@@ -432,14 +367,14 @@ func (n *NetworkRead) Start(info ReadStartInfo) {
 					}
 
 					for _, data := range blocks {
-						info.ReadCallback(info.Conn, addr, data.AddRef())
+						readCallBack(info.Conn, addr, data.AddRef())
 					}
 				}
 
 				return true
 			}
 
-			info.ReadCallback(info.Conn, addr, block.AddRef())
+			readCallBack(info.Conn, addr, block.AddRef())
 
 			return true
 		}

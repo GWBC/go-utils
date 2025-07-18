@@ -135,8 +135,7 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 	connObj.NetRead.SetContext(u.ctx)
 
 	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &u.wg,
-		WritePayload: u.wPayload,
+		Group: &u.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return u.sock.WriteToUDP(data, addr.(*net.UDPAddr))
 		},
@@ -146,11 +145,10 @@ func (u *UDPSvr) newConn(raddr *net.UDPAddr, laddr *net.UDPAddr) *UDPConn {
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
-		Conn:        connObj,
-		Group:       &u.wg,
-		DataPool:    u.dataPool,
-		ReadPayload: u.rPayload,
-		HeartCheck:  u.newHeartCheck(connObj),
+		Conn:       connObj,
+		Group:      &u.wg,
+		DataPool:   u.dataPool,
+		HeartCheck: u.newHeartCheck(connObj),
 		Read: func(data []byte) (int, net.Addr, error) {
 			select {
 			case block := <-connObj.ReadChan:

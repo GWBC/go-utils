@@ -9,7 +9,7 @@ import (
 )
 
 type HeartFun = func(conn Connection)
-type HookFun = func(offset int, block *pool.Block)
+type HookFun = func(block *pool.Block)
 type NewHeartFun = func(conn Connection) HeartbeatCheck
 type ExceptionFun = func(conn Connection, err error)
 type NetReadFun = func(conn Connection, addr net.Addr, data *pool.Block)
@@ -69,7 +69,6 @@ type NetworkContext interface {
 
 	GetBlock() *pool.Block
 	SetBlock(size int, payloadOffset int) NetworkContext
-	SetRWInfo(readPayload bool, writePayload bool) NetworkContext
 
 	Wait()
 }
