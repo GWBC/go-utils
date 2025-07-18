@@ -101,10 +101,6 @@ func (s *SystemContext) NewContext() NetworkContext {
 	return s
 }
 
-func (s *SystemContext) SetType(netType string) {
-	s.netType = netType
-}
-
 func (s *SystemContext) GetType() string {
 	return s.netType
 }

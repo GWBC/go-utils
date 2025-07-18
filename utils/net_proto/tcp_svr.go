@@ -43,6 +43,7 @@ type TCPSvr struct {
 }
 
 func (t *TCPSvr) Start() error {
+	t.netType = "TCP-Server"
 	sock, err := net.Listen("tcp", t.addr)
 	if err != nil {
 		return err

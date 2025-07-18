@@ -54,7 +54,6 @@ type Connection interface {
 type NetworkContext interface {
 	NewContext() NetworkContext
 
-	SetType(netType string)
 	GetType() string
 
 	SetAddr(addr string) NetworkContext

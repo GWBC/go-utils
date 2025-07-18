@@ -54,6 +54,7 @@ type UDPSvr struct {
 }
 
 func (u *UDPSvr) Start() error {
+	u.netType = "UDP-Server"
 	u.conns.New(-1, -1)
 
 	laddr, err := net.ResolveUDPAddr("udp4", u.addr)
