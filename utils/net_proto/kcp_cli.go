@@ -18,7 +18,10 @@ type KCPClient struct {
 }
 
 func (k *KCPClient) Start() error {
-	k.netType = "KCP-Client"
+	if len(k.netType) == 0 {
+		k.netType = "KCP"
+	}
+
 	k.SetData(nil)
 
 	//FEC前向纠错：10包允许丢3个包，丢包率30%，带宽相应增加30%

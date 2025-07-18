@@ -18,7 +18,10 @@ type TCPClient struct {
 }
 
 func (t *TCPClient) Start() error {
-	t.netType = "TCP-Client"
+	if len(t.netType) == 0 {
+		t.netType = "TCP"
+	}
+
 	t.SetData(nil)
 
 	conn, err := net.DialTimeout("tcp", t.addr, 10*time.Second)

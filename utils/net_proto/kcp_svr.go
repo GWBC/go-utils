@@ -44,7 +44,10 @@ type KCPSvr struct {
 }
 
 func (k *KCPSvr) Start() error {
-	k.netType = "KCP-Server"
+	if len(k.netType) == 0 {
+		k.netType = "KCP"
+	}
+
 	//FEC前向纠错：10包允许丢3个包，丢包率30%，带宽相应增加30%
 	sock, err := kcp.ListenWithOptions(k.addr, nil, 10, 3)
 	if err != nil {
