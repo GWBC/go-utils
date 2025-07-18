@@ -138,8 +138,7 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 	connObj.NetRead.SetContext(t.ctx).SetDecode(t.decodes)
 
 	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &t.wg,
-		WritePayload: t.wPayload,
+		Group: &t.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return conn.Write(data)
 		},
@@ -149,11 +148,10 @@ func (t *TCPSvr) newConn(conn net.Conn) {
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
-		Conn:        connObj,
-		Group:       &t.wg,
-		DataPool:    t.dataPool,
-		ReadPayload: t.rPayload,
-		HeartCheck:  t.newHeartCheck(connObj),
+		Conn:       connObj,
+		Group:      &t.wg,
+		DataPool:   t.dataPool,
+		HeartCheck: t.newHeartCheck(connObj),
 		Read: func(data []byte) (int, net.Addr, error) {
 			n, err := conn.Read(data)
 			return n, nil, err

@@ -39,8 +39,7 @@ func (t *TCPClient) Start() error {
 	t.netRead.SetContext(t.ctx).SetDecode(t.decodes)
 
 	t.netWrite.Start(WriteStartInfo{
-		Group:        &t.wg,
-		WritePayload: t.wPayload,
+		Group: &t.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return conn.Write(data)
 		},
@@ -50,11 +49,10 @@ func (t *TCPClient) Start() error {
 	})
 
 	t.netRead.Start(ReadStartInfo{
-		Conn:        t,
-		Group:       &t.wg,
-		DataPool:    t.dataPool,
-		ReadPayload: t.rPayload,
-		HeartCheck:  t.newHeartCheck(t),
+		Conn:       t,
+		Group:      &t.wg,
+		DataPool:   t.dataPool,
+		HeartCheck: t.newHeartCheck(t),
 		Read: func(data []byte) (int, net.Addr, error) {
 			n, err := t.conn.Read(data)
 			return n, nil, err

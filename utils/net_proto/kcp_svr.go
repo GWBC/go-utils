@@ -140,8 +140,7 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 	connObj.NetRead.SetContext(k.ctx).SetDecode(k.decodes)
 
 	connObj.NetWrite.Start(WriteStartInfo{
-		Group:        &k.wg,
-		WritePayload: k.wPayload,
+		Group: &k.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return conn.Write(data)
 		},
@@ -151,11 +150,10 @@ func (k *KCPSvr) newConn(conn *kcp.UDPSession) {
 	})
 
 	connObj.NetRead.Start(ReadStartInfo{
-		Conn:        connObj,
-		Group:       &k.wg,
-		DataPool:    k.dataPool,
-		ReadPayload: k.rPayload,
-		HeartCheck:  k.newHeartCheck(connObj),
+		Conn:       connObj,
+		Group:      &k.wg,
+		DataPool:   k.dataPool,
+		HeartCheck: k.newHeartCheck(connObj),
 		Read: func(data []byte) (int, net.Addr, error) {
 			n, err := conn.Read(data)
 			return n, nil, err

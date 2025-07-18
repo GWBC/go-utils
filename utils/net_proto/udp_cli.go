@@ -43,8 +43,7 @@ func (u *UDPClient) Start() error {
 	u.netRead.SetContext(u.ctx).SetDecode(u.decodes)
 
 	u.netWrite.Start(WriteStartInfo{
-		Group:        &u.wg,
-		WritePayload: u.wPayload,
+		Group: &u.wg,
 		Write: func(addr net.Addr, data []byte) (int, error) {
 			return u.sock.Write(data)
 		},
@@ -54,11 +53,10 @@ func (u *UDPClient) Start() error {
 	})
 
 	u.netRead.Start(ReadStartInfo{
-		Conn:        u,
-		Group:       &u.wg,
-		DataPool:    u.dataPool,
-		ReadPayload: u.rPayload,
-		HeartCheck:  u.newHeartCheck(u),
+		Conn:       u,
+		Group:      &u.wg,
+		DataPool:   u.dataPool,
+		HeartCheck: u.newHeartCheck(u),
 		Read: func(data []byte) (int, net.Addr, error) {
 			return u.sock.ReadFromUDP(data)
 		},
