@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"time"
 
-	"github.com/GWBC/go-utils/utils"
 	"github.com/GWBC/go-utils/utils/net_tun/netset"
 )
 
@@ -22,5 +20,5 @@ func NatTest() {
 }
 
 func main() {
-	//NatTest()
+	NatTest()
 }
