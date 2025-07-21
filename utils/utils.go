@@ -162,7 +162,7 @@ func _incip(ip net.IP) {
 }
 
 func _getIP(addr string) ([]byte, error) {
-	data, err := Get(addr, nil)
+	data, err := Get(addr, nil, nil)
 	if err != nil {
 		return nil, err
 	}
