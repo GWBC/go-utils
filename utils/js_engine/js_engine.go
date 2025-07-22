@@ -3,6 +3,7 @@ package jsengine
 import (
 	"encoding/base64"
 	"fmt"
+	"path/filepath"
 
 	"github.com/GWBC/go-utils/utils"
 	"github.com/dop251/goja"
@@ -58,6 +59,7 @@ func (j *JSEngine) Set(name string, val any) error {
 
 // 执行js
 func (j *JSEngine) Require(file string, name string) error {
+	file = filepath.ToSlash(file)
 	_, err := j.RunString(fmt.Sprintf("const %s = require('%s')", name, file))
 	return err
 }

@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"net"
+	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/GWBC/go-utils/utils"
 	jsengine "github.com/GWBC/go-utils/utils/js_engine"
 	"github.com/GWBC/go-utils/utils/net_tun/netset"
 )
@@ -25,35 +27,20 @@ func NatTest() {
 func TestJS() {
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 
-		a, _ := jsengine.New("t1")
-		err := a.Require("./a.js", "t")
+		fpath := filepath.Join(utils.Pwd(), "..", "douban.js")
+
+		a, _ := jsengine.New("douban")
+		err := a.Require(fpath, "home")
 		if err != nil {
 			panic(err)
 		}
 
-		ret, err := a.RunString("t.getDuoban()")
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(ret.(string))
-	}()
-
-	go func() {
-		defer wg.Done()
-
-		a, _ := jsengine.New("t1")
-		err := a.Require("./a.js", "t")
-		if err != nil {
-			panic(err)
-		}
-
-		ret, err := a.RunString("t.getDuoban()")
+		ret, err := a.RunString("home.Home()")
 		if err != nil {
 			panic(err)
 		}
