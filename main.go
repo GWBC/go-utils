@@ -45,6 +45,11 @@ func TestJS() {
 			panic(err)
 		}
 
+		ret, err = a.RunString("home.Data('movie', '热门', 1, 30)")
+		if err != nil {
+			panic(err)
+		}
+
 		fmt.Println(ret.(string))
 	}()
 

@@ -88,7 +88,7 @@ function Data(mtype, tag, pageStart, pageCount) {
     Accept: "application/json, text/plain, */*",
   };
 
-  return Get(url, headers);
+  return Get(url, headers, "test");
 }
 
 module.exports = {

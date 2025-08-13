@@ -103,8 +103,8 @@ func (j *JSEngine) initBase64() error {
 }
 
 func (j *JSEngine) initHttp() error {
-	err := j.vm.Set("Get", func(url string, headers map[string]string) string {
-		rsp, err := utils.Get(url, nil, headers)
+	err := j.vm.Set("Get", func(url string, headers map[string]string, cookieName string) string {
+		rsp, err := utils.Get(url, nil, headers, cookieName)
 		if err != nil {
 			panic(j.vm.ToValue(err.Error()))
 		}
@@ -116,8 +116,8 @@ func (j *JSEngine) initHttp() error {
 		return err
 	}
 
-	err = j.vm.Set("PostForm", func(url string, headers map[string]string, data map[string]string) string {
-		rsp, err := utils.PostForm(url, headers, data)
+	err = j.vm.Set("PostForm", func(url string, headers map[string]string, data map[string]string, cookieName string) string {
+		rsp, err := utils.PostForm(url, headers, data, cookieName)
 		if err != nil {
 			panic(j.vm.ToValue(err.Error()))
 		}
@@ -129,14 +129,20 @@ func (j *JSEngine) initHttp() error {
 		return err
 	}
 
-	return j.vm.Set("PostJson", func(url string, headers map[string]string, data map[string]any) string {
-		rsp, err := utils.PostJson(url, headers, data)
+	err = j.vm.Set("PostJson", func(url string, headers map[string]string, data map[string]any, cookieName string) string {
+		rsp, err := utils.PostJson(url, headers, data, cookieName)
 		if err != nil {
 			panic(j.vm.ToValue(err.Error()))
 		}
 
 		return string(rsp)
 	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func New(engineName string) (*JSEngine, error) {
