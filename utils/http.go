@@ -59,6 +59,7 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 			return nil, err
 		}
 
+		os.MkdirAll(defaultCookieRootPath, 0755)
 		jar.Save()
 
 		return resp, err
@@ -76,7 +77,6 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 
 func SetCookiesSavePath(fpath string) {
 	defaultCookieRootPath = fpath
-	os.MkdirAll(defaultCookieRootPath, 0755)
 }
 
 func Get(addr string, params map[string]string, headers map[string]string, cookieName ...string) ([]byte, error) {
