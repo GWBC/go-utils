@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/GWBC/go-utils/test"
 	"github.com/GWBC/go-utils/utils"
 	jsengine "github.com/GWBC/go-utils/utils/js_engine"
 	"github.com/GWBC/go-utils/utils/net_tun/netset"
@@ -56,8 +57,15 @@ func TestJS() {
 	wg.Wait()
 }
 
+func TestMPD() {
+	data := jsengine.BlibiliData2MPD(test.BliData, "/api/videojs/proxy-play?proxy=")
+	fmt.Println(data)
+}
+
 func main() {
 	//NatTest()
 
-	TestJS()
+	//TestJS()
+
+	TestMPD()
 }

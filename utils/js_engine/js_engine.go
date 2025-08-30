@@ -17,6 +17,7 @@ import (
 	Get(url, header{}) => string
 	PostForm(url, header{}, data{}) => string
 	PostJson(url, header{}, data{}) => string
+	BiliBili2MPD(biliData, proxy, cookieName) => string
 */
 
 type JSEngine struct {
@@ -40,6 +41,11 @@ func (j *JSEngine) init(name string) error {
 	}
 
 	err = j.initHttp()
+	if err != nil {
+		return err
+	}
+
+	err = j.initBiliBili()
 	if err != nil {
 		return err
 	}
@@ -136,6 +142,18 @@ func (j *JSEngine) initHttp() error {
 		}
 
 		return string(rsp)
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (j *JSEngine) initBiliBili() error {
+	err := j.vm.Set("BiliBili2MPD", func(biliData string, proxy string, cookieName string) string {
+		return BlibiliData2MPD(biliData, proxy)
 	})
 
 	if err != nil {
