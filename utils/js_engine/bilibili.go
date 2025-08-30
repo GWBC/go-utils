@@ -159,9 +159,6 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		if len(proxyRes) == 2 {
 			mpd.BaseURL = proxyRes[0]
 			proxyParam = proxyRes[1]
-			if !strings.HasSuffix(mpd.BaseURL, "/") {
-				mpd.BaseURL += "/"
-			}
 		}
 	}
 
