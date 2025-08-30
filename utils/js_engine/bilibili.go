@@ -112,15 +112,15 @@ type AdaptationSet struct {
 	ContentType             string           `xml:"contentType,attr"`
 	SubsegmentAlignment     string           `xml:"subsegmentAlignment,attr"`
 	SubsegmentStartsWithSAP string           `xml:"subsegmentStartsWithSAP,attr"`
-	Par                     string           `xml:"par,attr"`
+	Par                     string           `xml:"par,attr,omitempty"`
 	Representations         []Representation `xml:"Representation"`
 }
 
 type Representation struct {
 	ID          string        `xml:"id,attr"`
 	Bandwidth   string        `xml:"bandwidth,attr"`
-	Width       string        `xml:"width,attr"`
-	Height      string        `xml:"height,attr"`
+	Width       string        `xml:"width,attr,omitempty"`
+	Height      string        `xml:"height,attr,omitempty"`
 	Codecs      string        `xml:"codecs,attr"`
 	MimeType    string        `xml:"mimeType,attr"`
 	BaseURL     string        `xml:"BaseURL"`
@@ -175,7 +175,7 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		}
 
 		represent := Representation{}
-		represent.ID = strconv.Itoa(v.ID)
+		represent.ID = fmt.Sprintf("%v_%v_%v", v.ID, v.Codecid, v.Bandwidth)
 		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
 		represent.Width = strconv.Itoa(v.Width)
 		represent.Height = strconv.Itoa(v.Height)
@@ -199,6 +199,42 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 
 	if videoSet != nil {
 		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *videoSet)
+	}
+
+	var audioSet *AdaptationSet
+
+	for _, v := range dashInfo.Data.Dash.Audio {
+		if audioSet == nil {
+			audioSet = &AdaptationSet{}
+			audioSet.MimeType = v.MimeType
+			audioSet.ContentType = "audio"
+			audioSet.SubsegmentAlignment = "true"
+			audioSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
+		}
+
+		represent := Representation{}
+		represent.ID = fmt.Sprintf("%v_%v_%v", v.ID, v.Codecid, v.Bandwidth)
+		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
+		represent.Codecs = v.Codecs
+		represent.MimeType = v.MimeType
+
+		if len(proxyParam) != 0 {
+			represent.BaseURL += "?" + proxyParam
+			represent.BaseURL += base64.URLEncoding.EncodeToString([]byte(v.BaseURL))
+		} else {
+			represent.BaseURL += v.BaseURL
+		}
+
+		baseUrl := SegmentBase{}
+		baseUrl.IndexRange = v.SegmentBase.IndexRange
+		baseUrl.Initialization.Range = v.SegmentBase.Initialization
+		represent.SegmentBase = append(represent.SegmentBase, baseUrl)
+
+		audioSet.Representations = append(audioSet.Representations, represent)
+	}
+
+	if audioSet != nil {
+		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *audioSet)
 	}
 
 	data, err := xml.MarshalIndent(&mpd, "", "  ")
