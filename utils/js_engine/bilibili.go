@@ -112,7 +112,7 @@ type AdaptationSet struct {
 	ContentType             string           `xml:"contentType,attr"`
 	SubsegmentAlignment     string           `xml:"subsegmentAlignment,attr"`
 	SubsegmentStartsWithSAP string           `xml:"subsegmentStartsWithSAP,attr"`
-	Par                     string           `xml:"par,attr,omitempty"`
+	Lang                    string           `xml:"lang,attr,omitempty"`
 	Representations         []Representation `xml:"Representation"`
 }
 
@@ -162,20 +162,22 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		}
 	}
 
-	var videoSet *AdaptationSet
-
+	var videoSets = map[int]*AdaptationSet{}
 	for _, v := range dashInfo.Data.Dash.Video {
+		videoSet := videoSets[v.Codecid]
+
 		if videoSet == nil {
 			videoSet = &AdaptationSet{}
 			videoSet.MimeType = v.MimeType
 			videoSet.ContentType = "video"
 			videoSet.SubsegmentAlignment = "true"
 			videoSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
-			videoSet.Par = "16:9"
+
+			videoSets[v.Codecid] = videoSet
 		}
 
 		represent := Representation{}
-		represent.ID = fmt.Sprintf("%v_%v_%v", v.ID, v.Codecid, v.Bandwidth)
+		represent.ID = fmt.Sprintf("%v", v.ID)
 		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
 		represent.Width = strconv.Itoa(v.Width)
 		represent.Height = strconv.Itoa(v.Height)
@@ -197,23 +199,26 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		videoSet.Representations = append(videoSet.Representations, represent)
 	}
 
-	if videoSet != nil {
+	for _, videoSet := range videoSets {
 		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *videoSet)
 	}
 
-	var audioSet *AdaptationSet
-
+	var audioSets = map[int]*AdaptationSet{}
 	for _, v := range dashInfo.Data.Dash.Audio {
+		audioSet := audioSets[v.Codecid]
 		if audioSet == nil {
 			audioSet = &AdaptationSet{}
+			audioSet.Lang = "zh"
 			audioSet.MimeType = v.MimeType
 			audioSet.ContentType = "audio"
 			audioSet.SubsegmentAlignment = "true"
 			audioSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
+
+			audioSets[v.Codecid] = audioSet
 		}
 
 		represent := Representation{}
-		represent.ID = fmt.Sprintf("%v_%v_%v", v.ID, v.Codecid, v.Bandwidth)
+		represent.ID = fmt.Sprintf("%v", v.ID)
 		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
 		represent.Codecs = v.Codecs
 		represent.MimeType = v.MimeType
@@ -233,7 +238,7 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		audioSet.Representations = append(audioSet.Representations, represent)
 	}
 
-	if audioSet != nil {
+	for _, audioSet := range audioSets {
 		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *audioSet)
 	}
 
