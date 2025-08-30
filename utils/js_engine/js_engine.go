@@ -152,7 +152,7 @@ func (j *JSEngine) initHttp() error {
 }
 
 func (j *JSEngine) initBiliBili() error {
-	err := j.vm.Set("BiliBili2MPD", func(biliData string, proxy string, cookieName string) string {
+	err := j.vm.Set("BiliBili2MPD", func(biliData string, proxy string) string {
 		return BlibiliData2MPD(biliData, proxy)
 	})
 
