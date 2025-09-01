@@ -136,7 +136,15 @@ type Initialization struct {
 	Range string `xml:"range,attr"`
 }
 
-func BlibiliData2MPD(biliData string, proxyPath string) string {
+type SelectType int
+
+const (
+	SelectVideo = 0x01
+	SelectAudio = 0x10
+	SelectAll   = SelectVideo | SelectAudio
+)
+
+func BlibiliData2MPD(biliData string, proxyPath string, selectType SelectType) string {
 	dashInfo := BlibiliDashInfo{}
 	err := json.Unmarshal([]byte(biliData), &dashInfo)
 	if err != nil {
@@ -162,84 +170,88 @@ func BlibiliData2MPD(biliData string, proxyPath string) string {
 		}
 	}
 
-	var videoSets = map[int]*AdaptationSet{}
-	for _, v := range dashInfo.Data.Dash.Video {
-		videoSet := videoSets[v.Codecid]
+	if (selectType & SelectVideo) != 0 {
+		var videoSets = map[int]*AdaptationSet{}
+		for _, v := range dashInfo.Data.Dash.Video {
+			videoSet := videoSets[v.Codecid]
 
-		if videoSet == nil {
-			videoSet = &AdaptationSet{}
-			videoSet.MimeType = v.MimeType
-			videoSet.ContentType = "video"
-			videoSet.SubsegmentAlignment = "true"
-			videoSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
+			if videoSet == nil {
+				videoSet = &AdaptationSet{}
+				videoSet.MimeType = v.MimeType
+				videoSet.ContentType = "video"
+				videoSet.SubsegmentAlignment = "true"
+				videoSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
 
-			videoSets[v.Codecid] = videoSet
+				videoSets[v.Codecid] = videoSet
+			}
+
+			represent := Representation{}
+			represent.ID = fmt.Sprintf("%v", v.ID)
+			represent.Bandwidth = strconv.Itoa(v.Bandwidth)
+			represent.Width = strconv.Itoa(v.Width)
+			represent.Height = strconv.Itoa(v.Height)
+			represent.Codecs = v.Codecs
+			represent.MimeType = v.MimeType
+
+			if len(proxyParam) != 0 {
+				represent.BaseURL += "?" + proxyParam
+				represent.BaseURL += base64.URLEncoding.EncodeToString([]byte(v.BaseURL))
+			} else {
+				represent.BaseURL += v.BaseURL
+			}
+
+			baseUrl := SegmentBase{}
+			baseUrl.IndexRange = v.SegmentBase.IndexRange
+			baseUrl.Initialization.Range = v.SegmentBase.Initialization
+			represent.SegmentBase = append(represent.SegmentBase, baseUrl)
+
+			videoSet.Representations = append(videoSet.Representations, represent)
 		}
 
-		represent := Representation{}
-		represent.ID = fmt.Sprintf("%v", v.ID)
-		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
-		represent.Width = strconv.Itoa(v.Width)
-		represent.Height = strconv.Itoa(v.Height)
-		represent.Codecs = v.Codecs
-		represent.MimeType = v.MimeType
-
-		if len(proxyParam) != 0 {
-			represent.BaseURL += "?" + proxyParam
-			represent.BaseURL += base64.URLEncoding.EncodeToString([]byte(v.BaseURL))
-		} else {
-			represent.BaseURL += v.BaseURL
+		for _, videoSet := range videoSets {
+			mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *videoSet)
 		}
-
-		baseUrl := SegmentBase{}
-		baseUrl.IndexRange = v.SegmentBase.IndexRange
-		baseUrl.Initialization.Range = v.SegmentBase.Initialization
-		represent.SegmentBase = append(represent.SegmentBase, baseUrl)
-
-		videoSet.Representations = append(videoSet.Representations, represent)
 	}
 
-	for _, videoSet := range videoSets {
-		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *videoSet)
-	}
+	if (selectType & SelectAudio) != 0 {
+		var audioSets = map[int]*AdaptationSet{}
+		for _, v := range dashInfo.Data.Dash.Audio {
+			audioSet := audioSets[v.Codecid]
+			if audioSet == nil {
+				audioSet = &AdaptationSet{}
+				audioSet.Lang = "zh"
+				audioSet.MimeType = v.MimeType
+				audioSet.ContentType = "audio"
+				audioSet.SubsegmentAlignment = "true"
+				audioSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
 
-	var audioSets = map[int]*AdaptationSet{}
-	for _, v := range dashInfo.Data.Dash.Audio {
-		audioSet := audioSets[v.Codecid]
-		if audioSet == nil {
-			audioSet = &AdaptationSet{}
-			audioSet.Lang = "zh"
-			audioSet.MimeType = v.MimeType
-			audioSet.ContentType = "audio"
-			audioSet.SubsegmentAlignment = "true"
-			audioSet.SubsegmentStartsWithSAP = strconv.Itoa(v.StartWithSap)
+				audioSets[v.Codecid] = audioSet
+			}
 
-			audioSets[v.Codecid] = audioSet
+			represent := Representation{}
+			represent.ID = fmt.Sprintf("%v", v.ID)
+			represent.Bandwidth = strconv.Itoa(v.Bandwidth)
+			represent.Codecs = v.Codecs
+			represent.MimeType = v.MimeType
+
+			if len(proxyParam) != 0 {
+				represent.BaseURL += "?" + proxyParam
+				represent.BaseURL += base64.URLEncoding.EncodeToString([]byte(v.BaseURL))
+			} else {
+				represent.BaseURL += v.BaseURL
+			}
+
+			baseUrl := SegmentBase{}
+			baseUrl.IndexRange = v.SegmentBase.IndexRange
+			baseUrl.Initialization.Range = v.SegmentBase.Initialization
+			represent.SegmentBase = append(represent.SegmentBase, baseUrl)
+
+			audioSet.Representations = append(audioSet.Representations, represent)
 		}
 
-		represent := Representation{}
-		represent.ID = fmt.Sprintf("%v", v.ID)
-		represent.Bandwidth = strconv.Itoa(v.Bandwidth)
-		represent.Codecs = v.Codecs
-		represent.MimeType = v.MimeType
-
-		if len(proxyParam) != 0 {
-			represent.BaseURL += "?" + proxyParam
-			represent.BaseURL += base64.URLEncoding.EncodeToString([]byte(v.BaseURL))
-		} else {
-			represent.BaseURL += v.BaseURL
+		for _, audioSet := range audioSets {
+			mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *audioSet)
 		}
-
-		baseUrl := SegmentBase{}
-		baseUrl.IndexRange = v.SegmentBase.IndexRange
-		baseUrl.Initialization.Range = v.SegmentBase.Initialization
-		represent.SegmentBase = append(represent.SegmentBase, baseUrl)
-
-		audioSet.Representations = append(audioSet.Representations, represent)
-	}
-
-	for _, audioSet := range audioSets {
-		mpd.Period.AdaptationSets = append(mpd.Period.AdaptationSets, *audioSet)
 	}
 
 	data, err := xml.MarshalIndent(&mpd, "", "  ")

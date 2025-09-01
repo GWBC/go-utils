@@ -58,7 +58,7 @@ func TestJS() {
 }
 
 func TestMPD() {
-	data := jsengine.BlibiliData2MPD(test.BliData, "/api/videojs/proxy-play?proxy=")
+	data := jsengine.BlibiliData2MPD(test.BliData, "/api/videojs/proxy-play?proxy=", jsengine.SelectAudio)
 	fmt.Println(data)
 }
 
