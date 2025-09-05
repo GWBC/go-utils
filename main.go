@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/GWBC/go-utils/test"
@@ -26,35 +25,20 @@ func NatTest() {
 }
 
 func TestJS() {
-	var wg sync.WaitGroup
+	fpath := filepath.Join(utils.Pwd(), "..", "test", "test.js")
 
-	wg.Add(1)
+	js, _ := jsengine.New("js")
+	err := js.Require(fpath, "test")
+	if err != nil {
+		panic(err)
+	}
 
-	go func() {
-		defer wg.Done()
+	ret, err := js.RunString("test.Home()")
+	if err != nil {
+		panic(err)
+	}
 
-		fpath := filepath.Join(utils.Pwd(), "..", "douban.js")
-
-		a, _ := jsengine.New("douban")
-		err := a.Require(fpath, "home")
-		if err != nil {
-			panic(err)
-		}
-
-		ret, err := a.RunString("home.Home()")
-		if err != nil {
-			panic(err)
-		}
-
-		ret, err = a.RunString("home.Data('movie', '热门', 1, 30)")
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(ret.(string))
-	}()
-
-	wg.Wait()
+	fmt.Println(ret.(string))
 }
 
 func TestMPD() {
@@ -67,5 +51,5 @@ func main() {
 
 	//TestJS()
 
-	TestMPD()
+	//TestMPD()
 }
