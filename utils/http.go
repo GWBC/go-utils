@@ -16,9 +16,14 @@ import (
 
 var cookieEncry = true
 var aesGCM = AesGCM{}
+var defaultPathRoot = Pwd()
 
 func init() {
 	aesGCM.Init("@#%@#^!$#$%$*^&%^&*#")
+}
+
+func SetCookiesSavePath(filepath string) {
+	defaultPathRoot = filepath
 }
 
 func writeFile(filePath string, data []byte) error {
@@ -75,7 +80,7 @@ type LocalJar struct {
 func (l *LocalJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 	if len(l.rootPath) == 0 {
 		l.cookies = map[string]*http.Cookie{}
-		l.rootPath = filepath.Join(Pwd(), "cookies")
+		l.rootPath = filepath.Join(defaultPathRoot, "cookies")
 		os.MkdirAll(l.rootPath, 0755)
 	}
 
@@ -93,7 +98,7 @@ func (l *LocalJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 
 func (l *LocalJar) Cookies(u *url.URL) []*http.Cookie {
 	if len(l.rootPath) == 0 {
-		l.rootPath = filepath.Join(Pwd(), "cookies")
+		l.rootPath = filepath.Join(defaultPathRoot, "cookies")
 		os.MkdirAll(l.rootPath, 0755)
 		l.cookies = map[string]*http.Cookie{}
 		data, err := readFile(filepath.Join(l.rootPath, l.Name))
