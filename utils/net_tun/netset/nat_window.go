@@ -20,6 +20,8 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
+//go get gvisor.dev/gvisor@go
+
 const (
 	NAT_CACHE_TIMEOUT  = 1 * time.Minute
 	NAT_CACHE_UP_TIMET = NAT_CACHE_TIMEOUT / 10
