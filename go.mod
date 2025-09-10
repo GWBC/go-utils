@@ -1,11 +1,14 @@
 module github.com/GWBC/go-utils
 
-go 1.23.6
+go 1.24.0
+
+toolchain go1.24.5
 
 require (
 	github.com/docker/docker v28.3.2+incompatible
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994
 	github.com/dop251/goja_nodejs v0.0.0-20250409162600-f7acab6894b0
+	github.com/gofrs/flock v0.12.1
 	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/lysShub/divert-go v0.0.0-20250418062248-28e4462def61
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -15,7 +18,7 @@ require (
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/vishvananda/netlink v1.3.1
 	github.com/xtaci/kcp-go/v5 v5.6.22
-	golang.org/x/sys v0.34.0
+	golang.org/x/sys v0.36.0
 	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gvisor.dev/gvisor v0.0.0-20250718015824-35000683b6d7
@@ -38,8 +41,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
-	github.com/juju/go4 v0.0.0-20160222163258-40d72ab9641a // indirect
-	github.com/juju/persistent-cookiejar v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/reedsolomon v1.12.5 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -68,6 +69,4 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
-	gopkg.in/errgo.v1 v1.0.1 // indirect
-	gopkg.in/retry.v1 v1.0.3 // indirect
 )

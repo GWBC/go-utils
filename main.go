@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/GWBC/go-utils/test"
@@ -46,10 +47,31 @@ func TestMPD() {
 	fmt.Println(data)
 }
 
+func TestQbittorrent() {
+	api := utils.QbittorrentApi{}
+	api.SetHost("192.168.1.10:3457").Login("admin", "")
+	data, err := api.GetAllInfo()
+	if err == nil {
+		fmt.Println(data)
+	}
+
+	//api.Add("magnet:?xt=urn:btih:9B20B088B19C98147D8666A545AF401D77250849", "/downloads/xiaoma")
+
+	for k, v := range *data.Torrents {
+		if strings.Contains(*v.Name, "小马") {
+			api.Stop(k)
+			api.Start(k)
+			api.Delete(k, true)
+		}
+	}
+}
+
 func main() {
 	//NatTest()
 
 	//TestJS()
 
 	//TestMPD()
+
+	TestQbittorrent()
 }

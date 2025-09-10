@@ -9,14 +9,112 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
-	cookiejar "github.com/juju/persistent-cookiejar"
+	"github.com/gofrs/flock"
 )
 
-var defaultCookieRootPath = ""
+var cookieEncry = true
+var aesGCM = AesGCM{}
 
 func init() {
-	SetCookiesSavePath(filepath.Join(Pwd(), "cookies"))
+	aesGCM.Init("@#%@#^!$#$%$*^&%^&*#")
+}
+
+func writeFile(filePath string, data []byte) error {
+	fileLock := flock.New(filePath + ".lock")
+	err := fileLock.Lock()
+	if err != nil {
+		return err
+	}
+	defer fileLock.Unlock()
+
+	if cookieEncry {
+		encrpyData, err := aesGCM.Encrypt(string(data))
+		if err != nil {
+			return err
+		}
+
+		data = []byte(encrpyData)
+	}
+
+	return os.WriteFile(filePath, data, 0644)
+}
+
+func readFile(filePath string) ([]byte, error) {
+	fileLock := flock.New(filePath + ".lock")
+	err := fileLock.RLock()
+	if err != nil {
+		return nil, err
+	}
+	defer fileLock.Unlock()
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if cookieEncry {
+		rawData, err := aesGCM.Decrypt(string(data))
+		if err != nil {
+			return nil, err
+		}
+
+		data = []byte(rawData)
+	}
+
+	return data, err
+}
+
+type LocalJar struct {
+	Name     string
+	rootPath string
+	cookies  map[string]*http.Cookie
+}
+
+func (l *LocalJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	if len(l.rootPath) == 0 {
+		l.cookies = map[string]*http.Cookie{}
+		l.rootPath = filepath.Join(Pwd(), "cookies")
+		os.MkdirAll(l.rootPath, 0755)
+	}
+
+	for _, c := range cookies {
+		l.cookies[c.Name] = c
+	}
+
+	data, err := json.Marshal(l.cookies)
+	if err != nil {
+		return
+	}
+
+	writeFile(filepath.Join(l.rootPath, l.Name), data)
+}
+
+func (l *LocalJar) Cookies(u *url.URL) []*http.Cookie {
+	if len(l.rootPath) == 0 {
+		l.rootPath = filepath.Join(Pwd(), "cookies")
+		os.MkdirAll(l.rootPath, 0755)
+		l.cookies = map[string]*http.Cookie{}
+		data, err := readFile(filepath.Join(l.rootPath, l.Name))
+		if err != nil {
+			return nil
+		}
+
+		err = json.Unmarshal(data, &l.cookies)
+		if err != nil {
+			return nil
+		}
+	}
+
+	cs := []*http.Cookie{}
+	for _, c := range l.cookies {
+		if strings.Contains(u.Path, c.Path) {
+			cs = append(cs, c)
+		}
+	}
+
+	return cs
 }
 
 func _httpClient(addr string, method string, headers map[string]string, body io.Reader, cookieFileName string) (resp *http.Response, err error) {
@@ -38,13 +136,15 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 	}
 
 	if len(cookieFileName) != 0 {
-		jar, err := cookiejar.New(&cookiejar.Options{
-			Filename: filepath.Join(defaultCookieRootPath, cookieFileName),
-		})
+		// jar, err := cookiejar.New(&cookiejar.Options{
+		// 	Filename: filepath.Join(defaultCookieRootPath, cookieFileName),
+		// })
 
-		if err != nil {
-			return nil, err
-		}
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		jar := &LocalJar{Name: cookieFileName}
 
 		client := &http.Client{
 			Jar: jar,
@@ -59,8 +159,14 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 			return nil, err
 		}
 
-		os.MkdirAll(defaultCookieRootPath, 0755)
-		jar.Save()
+		for _, c := range resp.Cookies() {
+			if c.MaxAge == 0 && c.Expires.IsZero() {
+				c.MaxAge = 24 * 3600
+			}
+		}
+
+		// os.MkdirAll(defaultCookieRootPath, 0755)
+		// jar.Save()
 
 		return resp, err
 	}
@@ -75,11 +181,15 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 	return client.Do(req)
 }
 
-func SetCookiesSavePath(fpath string) {
-	defaultCookieRootPath = fpath
-}
-
 func Get(addr string, params map[string]string, headers map[string]string, cookieName ...string) ([]byte, error) {
+	if params == nil {
+		params = map[string]string{}
+	}
+
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
 	if len(params) != 0 {
 		data := url.Values{}
 		for k, v := range params {
@@ -108,6 +218,14 @@ func Get(addr string, params map[string]string, headers map[string]string, cooki
 }
 
 func PostForm(addr string, headers map[string]string, data map[string]string, cookieName ...string) ([]byte, error) {
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
+	if data == nil {
+		data = map[string]string{}
+	}
+
 	vals := url.Values{}
 	for k, v := range data {
 		vals.Set(k, v)
@@ -130,6 +248,10 @@ func PostForm(addr string, headers map[string]string, data map[string]string, co
 }
 
 func PostJson(addr string, headers map[string]string, data any, cookieName ...string) ([]byte, error) {
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
