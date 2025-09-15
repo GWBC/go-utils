@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -188,7 +189,7 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status error")
+		return nil, fmt.Errorf("status code:%d", resp.StatusCode)
 	}
 
 	return resp, err
