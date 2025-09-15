@@ -4,15 +4,19 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gofrs/flock"
 )
+
+var HttpTimeout = 10 * time.Second
 
 var cookieEncry = true
 var aesGCM = AesGCM{}
@@ -141,18 +145,11 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 	}
 
 	if len(cookieFileName) != 0 {
-		// jar, err := cookiejar.New(&cookiejar.Options{
-		// 	Filename: filepath.Join(defaultCookieRootPath, cookieFileName),
-		// })
-
-		// if err != nil {
-		// 	return nil, err
-		// }
-
 		jar := &LocalJar{Name: cookieFileName}
 
 		client := &http.Client{
-			Jar: jar,
+			Jar:     jar,
+			Timeout: HttpTimeout,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
@@ -164,26 +161,37 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 			return nil, err
 		}
 
+		if resp.StatusCode != 200 {
+			return nil, errors.New("status error")
+		}
+
 		for _, c := range resp.Cookies() {
 			if c.MaxAge == 0 && c.Expires.IsZero() {
 				c.MaxAge = 24 * 3600
 			}
 		}
 
-		// os.MkdirAll(defaultCookieRootPath, 0755)
-		// jar.Save()
-
 		return resp, err
 	}
 
 	client := &http.Client{
+		Timeout: HttpTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
 		}}
 
-	return client.Do(req)
+	resp, err = client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, errors.New("status error")
+	}
+
+	return resp, err
 }
 
 func Get(addr string, params map[string]string, headers map[string]string, cookieName ...string) ([]byte, error) {
