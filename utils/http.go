@@ -196,6 +196,10 @@ func _httpClient(addr string, method string, headers map[string]string, body io.
 }
 
 func Get(addr string, params map[string]string, headers map[string]string, cookieName ...string) ([]byte, error) {
+	if len(addr) == 0 {
+		return nil, errors.New("url is empty")
+	}
+
 	if params == nil {
 		params = map[string]string{}
 	}
@@ -210,7 +214,11 @@ func Get(addr string, params map[string]string, headers map[string]string, cooki
 			data.Set(k, v)
 		}
 
-		u, _ := url.ParseRequestURI(addr)
+		u, err := url.ParseRequestURI(addr)
+		if err != nil {
+			return nil, err
+		}
+
 		u.RawQuery = data.Encode()
 		addr = u.String()
 	}
@@ -232,6 +240,10 @@ func Get(addr string, params map[string]string, headers map[string]string, cooki
 }
 
 func PostForm(addr string, headers map[string]string, data map[string]string, cookieName ...string) ([]byte, error) {
+	if len(addr) == 0 {
+		return nil, errors.New("url is empty")
+	}
+
 	if headers == nil {
 		headers = map[string]string{}
 	}
@@ -262,6 +274,10 @@ func PostForm(addr string, headers map[string]string, data map[string]string, co
 }
 
 func PostJson(addr string, headers map[string]string, data any, cookieName ...string) ([]byte, error) {
+	if len(addr) == 0 {
+		return nil, errors.New("url is empty")
+	}
+
 	if headers == nil {
 		headers = map[string]string{}
 	}
